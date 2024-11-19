@@ -5,6 +5,7 @@ import com.example.csticaret.exceptions.AlreadyExistsException;
 import com.example.csticaret.exceptions.ResourceNotFoundException;
 import com.example.csticaret.model.User;
 import com.example.csticaret.request.CreateUserRequest;
+import com.example.csticaret.request.SignInRequest;
 import com.example.csticaret.request.UserUpdateRequest;
 import com.example.csticaret.response.ApiResponse;
 import com.example.csticaret.service.user.IUserService;
@@ -57,6 +58,17 @@ public class UserController {
         try {
             userService.deleteUser(userId);
             return ResponseEntity.ok(new ApiResponse("Delete User Success!", null));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+    @PostMapping("/signin")
+    public ResponseEntity<ApiResponse> signIn(@RequestBody SignInRequest request) {
+        try {
+            User user = userService.signIn(request);
+            UserDto userDto = userService.convertUserToDto(user);
+            return ResponseEntity.ok(new ApiResponse("Sign in successful!", userDto));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
         }

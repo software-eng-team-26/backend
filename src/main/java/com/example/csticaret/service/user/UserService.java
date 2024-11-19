@@ -6,6 +6,7 @@ import com.example.csticaret.exceptions.ResourceNotFoundException;
 import com.example.csticaret.model.User;
 import com.example.csticaret.repository.UserRepository;
 import com.example.csticaret.request.CreateUserRequest;
+import com.example.csticaret.request.SignInRequest;
 import com.example.csticaret.request.UserUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -60,5 +61,12 @@ public class UserService implements IUserService {
     public UserDto convertUserToDto(User user) {
         return modelMapper.map(user, UserDto.class);
     }
-    
+
+    @Override
+    public User signIn(SignInRequest request) throws ResourceNotFoundException {
+        return userRepository.findByEmail(request.getEmail())
+                .filter(user -> request.getPassword().equals(user.getPassword()))
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid email or password"));
+    }
+
 }
