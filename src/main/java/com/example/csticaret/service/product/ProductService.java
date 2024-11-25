@@ -92,7 +92,7 @@ public class ProductService implements IProductService {
         existingProduct.setLevel(request.getLevel());
         existingProduct.setDuration(request.getDuration());
         existingProduct.setModuleCount(request.getModuleCount());
-        existingProduct.isCertification(request.getC));
+       // existingProduct.isCertification(request.getC());
         existingProduct.setInstructorName(request.getInstructorName());
         existingProduct.setInstructorRole(request.getInstructorRole());
         existingProduct.setThumbnailUrl(request.getThumbnailUrl());
@@ -156,5 +156,10 @@ public class ProductService implements IProductService {
                 .toList();
         productDto.setImages(imageDtos);
         return productDto;
+    }
+    @Override
+    public List<Product> getProductsByInstructorName(String instructorName) {
+        return productRepository.findByInstructorName(instructorName);
+
     }
 }
