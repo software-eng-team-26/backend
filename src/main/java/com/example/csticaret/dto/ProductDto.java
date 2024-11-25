@@ -14,6 +14,14 @@ public class ProductDto {
     private BigDecimal price;
     private int inventory;
     private String description;
+    private int level;
+    private int duration;
+    private int moduleCount;
+    private boolean certification;
+    private String instructorName;
+    private String instructorRole;
+    private String thumbnailUrl;
+    private List<String> curriculum;
     private Category category;
     private List<ImageDto> images;
 }

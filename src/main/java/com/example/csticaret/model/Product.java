@@ -21,6 +21,16 @@ public class Product {
     private BigDecimal price;
     private int inventory;
     private String description;
+    private int level;
+    private int duration;
+    private int moduleCount;
+    private boolean certification;
+    private String instructorName;
+    private String instructorRole;
+    private String thumbnailUrl;
+
+    @ElementCollection
+    private List<String> curriculum;
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "category_id")
@@ -29,12 +39,23 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Image> images;
 
-    public Product(String name, String brand, BigDecimal price, int inventory, String description, Category category) {
+    public Product(String name, String brand, BigDecimal price, int inventory, String description,
+                   int level, int duration, int moduleCount, boolean certification, String instructorName,
+                   String instructorRole, String thumbnailUrl,List<String> curriculum, Category category)
+    {
         this.name = name;
         this.brand = brand;
         this.price = price;
         this.inventory = inventory;
         this.description = description;
+        this.level = level;
+        this.duration = duration;
+        this.moduleCount = moduleCount;
+        this.certification = certification;
+        this.instructorName = instructorName;
+        this.instructorRole = instructorRole;
+        this.thumbnailUrl = thumbnailUrl;
+        this.curriculum = curriculum;
         this.category = category;
     }
 }

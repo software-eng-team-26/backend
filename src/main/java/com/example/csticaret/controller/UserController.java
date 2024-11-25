@@ -62,7 +62,9 @@ public class UserController {
             return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
         }
     }
-/*
+
+    /*
+
     @PostMapping("/signin")
     public ResponseEntity<ApiResponse> signIn(@RequestBody SignInRequest request) {
         try {
@@ -74,5 +76,5 @@ public class UserController {
         }
     }
 
- */
+     */
 }

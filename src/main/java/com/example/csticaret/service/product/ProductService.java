@@ -49,6 +49,14 @@ public class ProductService implements IProductService {
                 request.getPrice(),
                 request.getInventory(),
                 request.getDescription(),
+                request.getLevel(),
+                request.getDuration(),
+                request.getModuleCount(),
+                request.isCertification(),
+                request.getInstructorName(),
+                request.getInstructorRole(),
+                request.getThumbnailUrl(),
+                request.getCurriculum(),
                 category
         );
     }
@@ -81,6 +89,17 @@ public class ProductService implements IProductService {
         existingProduct.setPrice(request.getPrice());
         existingProduct.setInventory(request.getInventory());
         existingProduct.setDescription(request.getDescription());
+        existingProduct.setLevel(request.getLevel());
+        existingProduct.setDuration(request.getDuration());
+        existingProduct.setModuleCount(request.getModuleCount());
+        existingProduct.isCertification(request.getC));
+        existingProduct.setInstructorName(request.getInstructorName());
+        existingProduct.setInstructorRole(request.getInstructorRole());
+        existingProduct.setThumbnailUrl(request.getThumbnailUrl());
+        existingProduct.setCurriculum(request.getCurriculum());
+
+
+
 
         Category category = categoryRepository.findByName(request.getCategory().getName());
         existingProduct.setCategory(category);

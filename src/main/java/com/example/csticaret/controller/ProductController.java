@@ -101,6 +101,20 @@ public class ProductController {
         }
     }
 
+    @GetMapping("/products/by/instructorName")
+    public ResponseEntity<ApiResponse> getProductsByInstructorName(@RequestParam String instructorName){
+        try {
+            List<Product> products = productService.getProductsByInstructorName(instructorName);
+            if (products.isEmpty()) {
+                return ResponseEntity.status(NOT_FOUND).body(new ApiResponse("No products found ", null));
+            }
+            List<ProductDto> convertedProducts = productService.getConvertedProducts(products);
+            return  ResponseEntity.ok(new ApiResponse("success", convertedProducts));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/products/{name}/products")
     public ResponseEntity<ApiResponse> getProductByName(@PathVariable String name){
         try {
