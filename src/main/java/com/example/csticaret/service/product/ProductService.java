@@ -147,11 +147,20 @@ public class ProductService implements IProductService {
       return products.stream().map(this::convertToDto).toList();
     }
 
+    private ImageDto convertToImageDto(Image image) {
+        ImageDto dto = new ImageDto();
+        dto.setId(image.getId());
+        dto.setFileName(image.getFileName()); // Map fileName field
+        dto.setDownloadUrl(image.getDownloadUrl()); // Map downloadUrl field
+        return dto;
+    }
+
+
     @Override
     public ProductDto convertToDto(Product product) {
         ProductDto dto = new ProductDto();
         dto.setId(product.getId());
-        dto.setName(product.getName());
+        dto.setTitle(product.getName());
         dto.setBrand(product.getBrand());
         dto.setPrice(product.getPrice());
         dto.setInventory(product.getInventory());
@@ -160,15 +169,23 @@ public class ProductService implements IProductService {
         dto.setDuration(product.getDuration());
         dto.setModuleCount(product.getModuleCount());
         dto.setCertification(product.isCertification());
-        dto.setInstructorName(product.getInstructorName());
+        dto.setInstructor(product.getInstructorName());
         dto.setInstructorRole(product.getInstructorRole());
-        dto.setThumbnailUrl(product.getThumbnailUrl());
+        dto.setThumbnail(product.getThumbnailUrl());
         dto.setCurriculum(product.getCurriculum());
         dto.setCategory(product.getCategory());
-        dto.setImages(product.getImages());
         dto.setFeatured(product.getFeatured());
+
+        // Convert List<Image> to List<ImageDto>
+        List<ImageDto> imageDtos = product.getImages()
+                .stream()
+                .map(this::convertToImageDto)
+                .toList();
+        dto.setImages(imageDtos);
+
         return dto;
     }
+
     @Override
     public List<Product> getProductsByInstructorName(String instructorName) {
         return productRepository.findByInstructorName(instructorName);
