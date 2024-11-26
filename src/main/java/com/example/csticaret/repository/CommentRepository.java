@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Long> {
-    List<Comment> findByProductIdAndApprovedTrue(Long productId);
+    List<Comment> findByProductIdAndApprovedTrue(Long productId); // Approved comments for a product
 }

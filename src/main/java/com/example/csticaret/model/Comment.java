@@ -14,21 +14,26 @@ public class Comment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "product_id")
-    private Product product;
+    @Column(nullable = false)
+    private String content;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @Column(nullable = false)
+    private int rating; // Rating between 1-5
+
+    private boolean approved = false; // Default: Not approved
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    private String content;
-    private Integer rating;
-    private LocalDateTime createdAt;
-    private boolean approved;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
+    public Comment(String content, int rating, User user, Product product) {
+        this.content = content;
+        this.rating = rating;
+        this.user = user;
+        this.product = product;
+}
 }
