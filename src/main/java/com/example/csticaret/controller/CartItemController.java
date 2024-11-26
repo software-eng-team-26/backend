@@ -21,10 +21,11 @@ public class CartItemController {
     @PostMapping("/item/add")
     public ResponseEntity<ApiResponse> addItemToCart(@RequestParam(required = false) Long cartId,
                                                      @RequestParam Long productId,
-                                                     @RequestParam Integer quantity) {
+                                                     @RequestParam Integer quantity,
+                                                     @RequestParam Long userId) {
         try {
             if (cartId == null) {
-              cartId= cartService.initializeNewCart();
+                cartId = cartService.initializeNewCart(userId);
             }
             cartItemService.addItemToCart(cartId, productId, quantity);
             return ResponseEntity.ok(new ApiResponse("Add Item Success", null));
@@ -32,6 +33,7 @@ public class CartItemController {
             return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
         }
     }
+
 
     @DeleteMapping("/cart/{cartId}/item/{itemId}/remove")
     public ResponseEntity<ApiResponse> removeItemFromCart(@PathVariable Long cartId, @PathVariable Long itemId) {

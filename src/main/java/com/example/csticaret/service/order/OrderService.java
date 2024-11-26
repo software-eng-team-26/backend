@@ -2,6 +2,7 @@ package com.example.csticaret.service.order;
 
 import com.example.csticaret.dto.OrderDto;
 import com.example.csticaret.enums.OrderStatus;
+import com.example.csticaret.exceptions.OutOfStockException;
 import com.example.csticaret.exceptions.ResourceNotFoundException;
 import com.example.csticaret.model.Cart;
 import com.example.csticaret.model.Order;
@@ -50,21 +51,33 @@ public class OrderService implements IOrderService {
         return  order;
     }
 
-     private List<OrderItem> createOrderItems(Order order, Cart cart) {
-        return  cart.getItems().stream().map(cartItem -> {
+    private List<OrderItem> createOrderItems(Order order, Cart cart) {
+        return cart.getItems().stream().map(cartItem -> {
             Product product = cartItem.getProduct();
+
+            // Validate inventory
+            if (product.getInventory() < cartItem.getQuantity()) {
+                throw new OutOfStockException("Product " + product.getName() + " is out of stock! Requested: "
+                        + cartItem.getQuantity() + ", Available: " + product.getInventory());
+            }
+
+            // Deduct inventory
             product.setInventory(product.getInventory() - cartItem.getQuantity());
             productRepository.save(product);
-            return  new OrderItem(
+
+            // Create order item
+            return new OrderItem(
                     order,
                     product,
                     cartItem.getQuantity(),
                     cartItem.getUnitPrice());
         }).toList();
+    }
 
-     }
 
-     private BigDecimal calculateTotalAmount(List<OrderItem> orderItemList) {
+
+
+    private BigDecimal calculateTotalAmount(List<OrderItem> orderItemList) {
         return  orderItemList
                 .stream()
                 .map(item -> item.getPrice()
