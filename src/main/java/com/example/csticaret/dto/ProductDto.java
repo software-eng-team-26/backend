@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 public class ProductDto {
     private Long id;
-    private String name;
+    private String title;
     private String brand;
     private BigDecimal price;
     private int inventory;
@@ -18,10 +18,12 @@ public class ProductDto {
     private int duration;
     private int moduleCount;
     private boolean certification;
-    private String instructorName;
+    private String instructor;
     private String instructorRole;
-    private String thumbnailUrl;
+    private String thumbnail;
     private List<String> curriculum;
     private Category category;
     private List<ImageDto> images;
+    private Boolean featured;
+    private Boolean isNew;
 }

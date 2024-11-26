@@ -92,7 +92,7 @@ public class ProductService implements IProductService {
         existingProduct.setLevel(request.getLevel());
         existingProduct.setDuration(request.getDuration());
         existingProduct.setModuleCount(request.getModuleCount());
-        existingProduct.setCertification(request.isCertification());
+       // existingProduct.isCertification(request.getC());
         existingProduct.setInstructorName(request.getInstructorName());
         existingProduct.setInstructorRole(request.getInstructorRole());
         existingProduct.setThumbnailUrl(request.getThumbnailUrl());
@@ -149,16 +149,29 @@ public class ProductService implements IProductService {
 
     @Override
     public ProductDto convertToDto(Product product) {
-        ProductDto productDto = modelMapper.map(product, ProductDto.class);
-        List<Image> images = imageRepository.findByProductId(product.getId());
-        List<ImageDto> imageDtos = images.stream()
-                .map(image -> modelMapper.map(image, ImageDto.class))
-                .toList();
-        productDto.setImages(imageDtos);
-        return productDto;
+        ProductDto dto = new ProductDto();
+        dto.setId(product.getId());
+        dto.setName(product.getName());
+        dto.setBrand(product.getBrand());
+        dto.setPrice(product.getPrice());
+        dto.setInventory(product.getInventory());
+        dto.setDescription(product.getDescription());
+        dto.setLevel(product.getLevel());
+        dto.setDuration(product.getDuration());
+        dto.setModuleCount(product.getModuleCount());
+        dto.setCertification(product.isCertification());
+        dto.setInstructorName(product.getInstructorName());
+        dto.setInstructorRole(product.getInstructorRole());
+        dto.setThumbnailUrl(product.getThumbnailUrl());
+        dto.setCurriculum(product.getCurriculum());
+        dto.setCategory(product.getCategory());
+        dto.setImages(product.getImages());
+        dto.setFeatured(product.getFeatured());
+        return dto;
     }
     @Override
-    public List<Product> getProductsByInstructorName(String instructorName){
+    public List<Product> getProductsByInstructorName(String instructorName) {
         return productRepository.findByInstructorName(instructorName);
-}
+
+    }
 }

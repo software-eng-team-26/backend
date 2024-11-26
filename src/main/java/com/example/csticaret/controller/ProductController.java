@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -27,7 +28,11 @@ public class ProductController {
     public ResponseEntity<ApiResponse> getAllProducts() {
         List<Product> products = productService.getAllProducts();
         List<ProductDto> convertedProducts = productService.getConvertedProducts(products);
-        return  ResponseEntity.ok(new ApiResponse("success", convertedProducts));
+        System.out.println("Returning products with featured status: " + 
+            convertedProducts.stream()
+                .map(p -> "ID: " + p.getId() + ", Featured: " + p.getFeatured())
+                .collect(Collectors.joining(", ")));
+        return ResponseEntity.ok(new ApiResponse("success", convertedProducts));
     }
 
     @GetMapping("product/{productId}/product")
