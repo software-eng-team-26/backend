@@ -39,6 +39,9 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Image> images;
 
+    @Column(nullable = false)
+    private Boolean featured = false;
+
     public Product(String name, String brand, BigDecimal price, int inventory, String description,
                    int level, int duration, int moduleCount, boolean certification, String instructorName,
                    String instructorRole, String thumbnailUrl,List<String> curriculum, Category category)
@@ -57,5 +60,14 @@ public class Product {
         this.thumbnailUrl = thumbnailUrl;
         this.curriculum = curriculum;
         this.category = category;
+        this.featured = false;
+    }
+
+    public Boolean getFeatured() {
+        return featured;
+    }
+
+    public void setFeatured(Boolean featured) {
+        this.featured = featured;
     }
 }
