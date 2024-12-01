@@ -9,4 +9,9 @@ import java.util.List;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByUserIdOrderByOrderDateDesc(Long userId);
+
+    // Kullanıcının belirli bir ürünü satın alıp almadığını kontrol eden sorgu
+    boolean existsByUserIdAndOrderItems_ProductId(Long userId, Long productId);
 }
+
+

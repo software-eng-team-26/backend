@@ -19,14 +19,18 @@ public class CommentController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<Comment> addComment(@RequestBody CommentDto commentDTO) {
-        Comment comment = commentService.addComment(
-                commentDTO.getProductId(),
-                commentDTO.getUserId(),
-                commentDTO.getContent(),
-                commentDTO.getRating()
-        );
-        return ResponseEntity.ok(comment);
+    public ResponseEntity<?> addComment(@RequestBody CommentDto commentDto) {
+        try {
+            Comment comment = commentService.addComment(
+                    commentDto.getProductId(),
+                    commentDto.getUserId(),
+                    commentDto.getContent(),
+                    commentDto.getRating()
+            );
+            return ResponseEntity.ok(comment);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
 

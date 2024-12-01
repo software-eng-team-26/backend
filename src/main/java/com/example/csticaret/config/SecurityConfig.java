@@ -29,7 +29,7 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
-    
+
     @Qualifier("customUserDetailsService")
     private final UserDetailsService userDetailsService;
 
@@ -63,8 +63,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/users/add").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
+                    .requestMatchers("/api/comments/**").permitAll()
                 .requestMatchers("/api/v1/carts/**").authenticated()
                 .anyRequest().authenticated()
+
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -96,4 +98,5 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 }
