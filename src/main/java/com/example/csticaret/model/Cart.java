@@ -1,6 +1,7 @@
 package com.example.csticaret.model;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,43 +21,39 @@ public class Cart {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private BigDecimal totalAmount = BigDecimal.ZERO;
 
-    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<CartItem> items = new HashSet<>();
-
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    @JsonManagedReference
+    @JsonIgnore
     private User user;
 
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private Set<CartItem> items = new HashSet<>();
 
+    private BigDecimal totalAmount = BigDecimal.ZERO;
 
-
-
+    public Long getUserId() {
+        return user != null ? user.getId() : null;
+    }
 
     public void addItem(CartItem item) {
-        this.items.add(item);
+        items.add(item);
         item.setCart(this);
         updateTotalAmount();
     }
 
     public void removeItem(CartItem item) {
-        this.items.remove(item);
+        items.remove(item);
         item.setCart(null);
         updateTotalAmount();
     }
 
-    private void updateTotalAmount() {
-        this.totalAmount = items.stream().map(item -> {
-            BigDecimal unitPrice = item.getUnitPrice();
-            if (unitPrice == null) {
-                return  BigDecimal.ZERO;
-            }
-            return unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
-        }).reduce(BigDecimal.ZERO, BigDecimal::add);
+    public void updateTotalAmount() {
+        this.totalAmount = items.stream()
+            .map(item -> {
+                if (item.getUnitPrice() == null) return BigDecimal.ZERO;
+                return item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+            })
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
-
-
-
 }

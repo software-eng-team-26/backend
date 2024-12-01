@@ -2,8 +2,8 @@ package com.example.csticaret.enums;
 
 public enum OrderStatus {
     PENDING,
+    PAID,
     PROCESSING,
-    SHIPPED,
-    DELIVERED,
-    CANCELLED
+    IN_TRANSIT,
+    DELIVERED
 }

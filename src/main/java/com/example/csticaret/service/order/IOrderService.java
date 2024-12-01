@@ -1,12 +1,18 @@
 package com.example.csticaret.service.order;
 
-import com.example.csticaret.dto.OrderDto;
 import com.example.csticaret.model.Order;
+import com.example.csticaret.model.Cart;
+import com.example.csticaret.request.PaymentRequest;
+import com.example.csticaret.request.ShippingDetailsRequest;
+import org.springframework.core.io.Resource;
 
 import java.util.List;
 
 public interface IOrderService {
-    Order placeOrder(Long userId);
-    OrderDto getOrder(Long orderId);
-    List<OrderDto> getUserOrders(Long userId);
+    Order createOrderFromCart(Cart cart, ShippingDetailsRequest shippingDetails);
+    Order getOrderById(Long orderId);
+    boolean processPayment(Order order, PaymentRequest paymentRequest);
+    String generateInvoicePdf(Order order);
+    Resource getInvoicePdf(Order order);
+    List<Order> getUserOrders(Long userId);
 }

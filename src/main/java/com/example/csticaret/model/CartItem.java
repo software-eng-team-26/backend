@@ -9,32 +9,38 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
+@Entity
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
-@Entity
+@AllArgsConstructor
 public class CartItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private int quantity;
-    private BigDecimal unitPrice;
-    private BigDecimal totalPrice;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "product_id")
     private Product product;
 
-    @JsonIgnore
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_id")
+    @JsonIgnore
     private Cart cart;
 
-    public void setTotalPrice() {
-        this.totalPrice = this.unitPrice.multiply(new BigDecimal(quantity));
+    private int quantity;
 
+    private BigDecimal unitPrice;
+
+    private BigDecimal totalPrice;
+
+    @PrePersist
+    @PreUpdate
+    public void calculateTotalPrice() {
+        if (unitPrice != null && quantity > 0) {
+            this.totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
+        } else {
+            this.totalPrice = BigDecimal.ZERO;
+        }
     }
-
-    
 }

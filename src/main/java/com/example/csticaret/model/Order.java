@@ -25,8 +25,17 @@ public class Order {
     private LocalDate orderDate;
     private BigDecimal totalAmount;
     @Enumerated(EnumType.STRING)
+    @Column(name = "order_status")
     private OrderStatus orderStatus;
 
+    @Column(columnDefinition = "TEXT")
+    private String shippingAddress;
+
+    @Column(name = "shipping_phone")
+    private String shippingPhone;
+
+    @Column(name = "shipping_email")
+    private String shippingEmail;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<OrderItem> orderItems = new HashSet<>();

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import com.example.csticaret.exception.InsufficientStockException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -19,7 +20,7 @@ public class Product {
     private String name;
     private String brand;
     private BigDecimal price;
-    private int inventory;
+    private Integer inventory;
     private String description;
     private int level;
     private int duration;
@@ -69,5 +70,16 @@ public class Product {
 
     public void setFeatured(Boolean featured) {
         this.featured = featured;
+    }
+
+    public boolean hasStock(int quantity) {
+        return inventory >= quantity;
+    }
+
+    public void decreaseStock(int quantity) {
+        if (!hasStock(quantity)) {
+            throw new InsufficientStockException("Not enough stock available");
+        }
+        this.inventory -= quantity;
     }
 }
