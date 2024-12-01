@@ -4,6 +4,7 @@ import com.example.csticaret.enums.OrderStatus;
 import com.example.csticaret.exceptions.ResourceNotFoundException;
 import com.example.csticaret.model.*;
 import com.example.csticaret.repository.OrderRepository;
+import com.example.csticaret.repository.ProductRepository;
 import com.example.csticaret.request.PaymentRequest;
 import com.example.csticaret.request.ShippingDetailsRequest;
 import com.example.csticaret.service.cart.ICartService;
@@ -32,7 +33,9 @@ import java.util.stream.Stream;
 public class OrderService implements IOrderService {
     private final OrderRepository orderRepository;
     private final ICartService cartService;
+    private final ProductRepository productRepository;
     private static final String INVOICE_DIR = "invoices";
+
 
     @Override
     @Transactional
@@ -45,32 +48,41 @@ public class OrderService implements IOrderService {
 
         // Set shipping details
         order.setShippingAddress(String.format("%s\n%s\n%s, %s %s\n%s",
-            shippingDetails.getAddress(),
-            shippingDetails.getCity(),
-            shippingDetails.getState(),
-            shippingDetails.getZipCode(),
-            shippingDetails.getCountry(),
-            shippingDetails.getPhone()
+                shippingDetails.getAddress(),
+                shippingDetails.getCity(),
+                shippingDetails.getState(),
+                shippingDetails.getZipCode(),
+                shippingDetails.getCountry(),
+                shippingDetails.getPhone()
         ));
 
-        // Convert cart items to order items
+        // Process each cart item: convert to order item and update stock
         cart.getItems().forEach(cartItem -> {
+            Product product = cartItem.getProduct();
+
+            // Decrease stock
+            product.decreaseStock(cartItem.getQuantity());
+            productRepository.save(product); // Save updated stock to the database
+
+            // Convert cart item to order item
             OrderItem orderItem = new OrderItem(
-                order,
-                cartItem.getProduct(),
-                cartItem.getQuantity(),
-                cartItem.getUnitPrice()
+                    order,
+                    product,
+                    cartItem.getQuantity(),
+                    cartItem.getUnitPrice()
             );
             order.getOrderItems().add(orderItem);
         });
 
+        // Save the order
         Order savedOrder = orderRepository.save(order);
-        
+
         // Clear the cart after successful order creation
         cartService.clearCart(cart.getId());
-        
+
         return savedOrder;
     }
+
 
     @Override
     public Order getOrderById(Long orderId) {
