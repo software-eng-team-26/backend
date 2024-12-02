@@ -32,6 +32,9 @@ public class Cart {
 
     private BigDecimal totalAmount = BigDecimal.ZERO;
 
+    @Column(name = "guest_id")
+    private String guestId;
+
     public Long getUserId() {
         return user != null ? user.getId() : null;
     }

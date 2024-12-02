@@ -15,11 +15,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import jakarta.servlet.http.HttpSession;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -61,34 +63,36 @@ public class CartController {
     public ResponseEntity<ApiResponse> addItemToCart(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam Long productId,
-            @RequestParam(defaultValue = "1") int quantity) {
-        log.info("Adding item to cart. User: {}, Product: {}, Quantity: {}", 
-            userDetails.getUsername(), productId, quantity);
+            @RequestParam(defaultValue = "1") int quantity,
+            HttpSession session) {
         try {
-            User user = userService.getUserByEmail(userDetails.getUsername());
-            log.info("Found user: {}", user.getId());
-            
-            Cart cart = cartService.getCartByUserId(user.getId());
-            log.info("Found/Created cart: {}", cart.getId());
+            Cart cart;
+            if (userDetails != null) {
+                // Authenticated user flow
+                User user = userService.getUserByEmail(userDetails.getUsername());
+                cart = cartService.getCartByUserId(user.getId());
+            } else {
+                // Guest user flow
+                String guestId = (String) session.getAttribute("GUEST_ID");
+                if (guestId == null) {
+                    guestId = UUID.randomUUID().toString();
+                    session.setAttribute("GUEST_ID", guestId);
+                }
+                cart = cartService.getOrCreateGuestCart(guestId);
+            }
             
             cartItemService.addItemToCart(cart.getId(), productId, quantity);
-            log.info("Added item to cart");
             
-            // Get updated cart to return
-            Cart updatedCart = cartService.getCartByUserId(user.getId());
-            log.info("Updated cart items count: {}", updatedCart.getItems().size());
-            log.info("Updated cart total: {}", updatedCart.getTotalAmount());
+            // Get updated cart
+            Cart updatedCart = cartService.getCart(cart.getId());
             
-            // Create a simplified response
             Map<String, Object> cartResponse = new HashMap<>();
             cartResponse.put("id", updatedCart.getId());
-            cartResponse.put("userId", updatedCart.getUserId());
             cartResponse.put("items", updatedCart.getItems());
             cartResponse.put("totalAmount", updatedCart.getTotalAmount());
             
             return ResponseEntity.ok(new ApiResponse("Item added to cart successfully", cartResponse));
         } catch (ResourceNotFoundException e) {
-            log.error("Error adding item to cart:", e);
             return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
         }
     }

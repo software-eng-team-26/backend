@@ -85,4 +85,16 @@ public class CartService implements ICartService{
         cart.updateTotalAmount();
         cartRepository.save(cart);
     }
+
+    @Override
+    public Cart getOrCreateGuestCart(String guestId) {
+        return cartRepository.findByGuestId(guestId)
+            .orElseGet(() -> {
+                Cart newCart = new Cart();
+                newCart.setGuestId(guestId);
+                newCart.setTotalAmount(BigDecimal.ZERO);
+                newCart.setItems(new HashSet<>());
+                return cartRepository.save(newCart);
+            });
+    }
 }

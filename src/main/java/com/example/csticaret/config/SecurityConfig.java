@@ -63,8 +63,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/users/add").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
-                    .requestMatchers("/api/comments/**").permitAll()
-                .requestMatchers("/api/v1/carts/**").authenticated()
+                .requestMatchers("/api/comments/**").permitAll()
+                .requestMatchers("/api/v1/carts/**").permitAll()
+                .requestMatchers("/api/v1/orders/**").authenticated()
+                .requestMatchers("/api/v1/checkout/**").authenticated()
                 .anyRequest().authenticated()
 
             )
