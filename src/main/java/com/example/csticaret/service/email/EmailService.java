@@ -14,6 +14,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.Collections;
@@ -35,10 +36,19 @@ public class EmailService {
 
     public void sendOrderConfirmation(String toEmail, Order order, String invoicePath) {
         try {
+            log.info("Starting to send order confirmation email to: {}", toEmail);
+            log.info("Using invoice path: {}", invoicePath);
+            
             // Read the PDF file and encode it as base64
             File invoiceFile = new File(invoicePath);
+            if (!invoiceFile.exists()) {
+                log.error("Invoice file not found at path: {}", invoicePath);
+                throw new FileNotFoundException("Invoice file not found");
+            }
+            
             byte[] fileContent = Files.readAllBytes(invoiceFile.toPath());
             String base64Invoice = Base64.getEncoder().encodeToString(fileContent);
+            log.info("Invoice file read and encoded successfully");
 
             // Create attachment
             Map<String, String> attachment = new HashMap<>();
@@ -53,6 +63,12 @@ public class EmailService {
             requestBody.put("subject", "Your Order Confirmation #" + order.getOrderId());
             requestBody.put("html", buildOrderConfirmationEmail(order));
             requestBody.put("attachments", Collections.singletonList(attachment));
+
+            // Log request details (excluding sensitive data)
+            log.info("Preparing to send email with Resend API");
+            log.info("From: {}", fromEmail);
+            log.info("To: {}", toEmail);
+            log.info("Subject: Order Confirmation #{}", order.getOrderId());
 
             // Set up headers
             HttpHeaders headers = new HttpHeaders();
@@ -72,14 +88,14 @@ public class EmailService {
                 String.class
             );
 
-            log.info("Order confirmation email sent successfully to {}", toEmail);
+            log.info("Email sent successfully. Response: {}", response);
         } catch (HttpClientErrorException e) {
-            log.error("Resend API error: {}", e.getResponseBodyAsString());
-            // Don't throw exception, just log the error
-            // This way the order will still be created even if email fails
+            log.error("Resend API error. Status: {}, Response: {}", 
+                e.getStatusCode(), e.getResponseBodyAsString());
+            throw new RuntimeException("Failed to send email via Resend API", e);
         } catch (Exception e) {
-            log.error("Error sending order confirmation email: {}", e.getMessage());
-            // Don't throw exception, just log the error
+            log.error("Error sending order confirmation email", e);
+            throw new RuntimeException("Failed to send email", e);
         }
     }
 

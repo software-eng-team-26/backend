@@ -8,15 +8,18 @@ import com.example.csticaret.repository.ProductRepository;
 import com.example.csticaret.request.PaymentRequest;
 import com.example.csticaret.request.ShippingDetailsRequest;
 import com.example.csticaret.service.cart.ICartService;
+import com.example.csticaret.service.email.EmailService;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.annotation.PostConstruct;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -29,13 +32,24 @@ import java.util.List;
 import java.util.stream.Stream;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class OrderService implements IOrderService {
     private final OrderRepository orderRepository;
     private final ICartService cartService;
     private final ProductRepository productRepository;
+    private final EmailService emailService;
     private static final String INVOICE_DIR = "invoices";
 
+    @PostConstruct
+    public void init() {
+        try {
+            Files.createDirectories(Path.of(INVOICE_DIR));
+            log.info("Invoice directory created/verified at: {}", INVOICE_DIR);
+        } catch (IOException e) {
+            log.error("Failed to create invoice directory", e);
+        }
+    }
 
     @Override
     @Transactional
@@ -76,6 +90,22 @@ public class OrderService implements IOrderService {
 
         // Save the order
         Order savedOrder = orderRepository.save(order);
+
+        // Generate invoice and send email
+        try {
+            log.info("Attempting to generate invoice and send email for order: {}", savedOrder.getOrderId());
+            String invoicePath = generateInvoicePdf(savedOrder);
+            log.info("Invoice generated at path: {}", invoicePath);
+            
+            emailService.sendOrderConfirmation(
+                shippingDetails.getEmail(),
+                savedOrder,
+                invoicePath
+            );
+            log.info("Email sent successfully for order: {}", savedOrder.getOrderId());
+        } catch (Exception e) {
+            log.error("Failed to send order confirmation email for order: {}", savedOrder.getOrderId(), e);
+        }
 
         // Clear the cart after successful order creation
         cartService.clearCart(cart.getId());
