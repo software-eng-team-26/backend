@@ -3,9 +3,8 @@ package com.example.csticaret.dto;
 import lombok.Data;
 
 @Data
-public class CommentDto {
+public class RatingDto {
     private Long productId;
     private Long userId;
-    private String content;
-    private Integer rating;
-}
+    private int rating;
+} 

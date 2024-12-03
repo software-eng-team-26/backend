@@ -121,14 +121,10 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    public boolean processPayment(Order order, PaymentRequest paymentRequest) {
-        // Mock payment processing
-        boolean isValid = validateCreditCard(paymentRequest);
-        if (isValid) {
-            order.setOrderStatus(OrderStatus.PAID);
-            orderRepository.save(order);
-        }
-        return isValid;
+    public Order processPayment(Long orderId) {
+        Order order = getOrderById(orderId);
+        order.setOrderStatus(OrderStatus.DELIVERED);
+        return orderRepository.save(order);
     }
 
     @Override
@@ -213,13 +209,6 @@ public class OrderService implements IOrderService {
         );
         total.setAlignment(Element.ALIGN_RIGHT);
         document.add(total);
-    }
-
-    private boolean validateCreditCard(PaymentRequest paymentRequest) {
-        // Mock validation - in reality, you would integrate with a payment processor
-        return paymentRequest.getCardNumber().length() == 16 &&
-               paymentRequest.getCvv().length() == 3 &&
-               paymentRequest.getExpiryDate().matches("\\d{2}/\\d{2}");
     }
 
     public List<Order> getUserOrders(Long userId) {

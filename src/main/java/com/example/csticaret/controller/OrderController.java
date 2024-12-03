@@ -109,8 +109,8 @@ public class OrderController {
                     .body(new ApiResponse<>("You don't have permission to access this order", null));
             }
 
-            // Mark order as paid
-            order.setOrderStatus(OrderStatus.PAID);
+            // For digital products (courses), mark as DELIVERED immediately after payment
+            order.setOrderStatus(OrderStatus.DELIVERED);
             order = orderRepository.save(order);
 
             // Generate invoice and send email
@@ -124,7 +124,7 @@ public class OrderController {
             Map<String, Object> response = new HashMap<>();
             response.put("order", order);
             
-            return ResponseEntity.ok(new ApiResponse<>("Payment completed successfully", response));
+            return ResponseEntity.ok(new ApiResponse<>("Payment completed and course access granted", response));
         } catch (Exception e) {
             log.error("Error completing payment:", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

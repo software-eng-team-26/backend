@@ -43,6 +43,9 @@ public class Product {
     @Column(nullable = false)
     private Boolean featured = false;
 
+    @Column(nullable = false)
+    private Double averageRating = 0.0;
+
     public Product(String name, String brand, BigDecimal price, int inventory, String description,
                    int level, int duration, int moduleCount, boolean certification, String instructorName,
                    String instructorRole, String thumbnailUrl,List<String> curriculum, Category category)

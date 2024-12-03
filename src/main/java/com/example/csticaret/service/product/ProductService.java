@@ -175,6 +175,7 @@ public class ProductService implements IProductService {
         dto.setCurriculum(product.getCurriculum());
         dto.setCategory(product.getCategory());
         dto.setFeatured(product.getFeatured());
+        dto.setAverageRating(product.getAverageRating());
 
         // Convert List<Image> to List<ImageDto>
         List<ImageDto> imageDtos = product.getImages()

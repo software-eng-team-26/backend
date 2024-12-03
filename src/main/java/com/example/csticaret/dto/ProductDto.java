@@ -26,4 +26,5 @@ public class ProductDto {
     private List<ImageDto> images;
     private Boolean featured;
     private Boolean isNew;
+    private Double averageRating;
 }
