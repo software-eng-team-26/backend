@@ -8,11 +8,14 @@ import com.example.csticaret.request.SignInRequest;
 import com.example.csticaret.request.SignUpRequest;
 import com.example.csticaret.response.AuthenticationResponse;
 import com.example.csticaret.service.jwt.JwtService;
+import com.example.csticaret.service.cart.ICartService;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final ICartService cartService;
+    private final HttpSession httpSession;
 
     @Override
     public AuthenticationResponse signIn(SignInRequest request) {
@@ -44,6 +49,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
+    @Transactional
     public AuthenticationResponse signUp(SignUpRequest request) {
         User user = User.builder()
             .firstName(request.getFirstName())
@@ -52,7 +58,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             .password(passwordEncoder.encode(request.getPassword()))
             .build();
 
-        userRepository.save(user);
+        user = userRepository.save(user);
+
+        // Transfer guest cart if exists
+        String guestId = (String) httpSession.getAttribute("GUEST_ID");
+        if (guestId != null) {
+            cartService.transferGuestCartToUser(guestId, user);
+            httpSession.removeAttribute("GUEST_ID");
+        }
 
         String token = jwtService.generateToken(user);
         UserDto userDto = convertToUserDto(user);

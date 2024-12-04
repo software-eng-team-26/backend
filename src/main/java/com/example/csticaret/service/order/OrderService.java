@@ -123,7 +123,7 @@ public class OrderService implements IOrderService {
     @Override
     public Order processPayment(Long orderId) {
         Order order = getOrderById(orderId);
-        order.setOrderStatus(OrderStatus.DELIVERED);
+        order.setOrderStatus(OrderStatus.PROCESSING);
         return orderRepository.save(order);
     }
 

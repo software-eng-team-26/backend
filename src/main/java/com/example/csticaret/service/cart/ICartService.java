@@ -1,6 +1,7 @@
 package com.example.csticaret.service.cart;
 
 import com.example.csticaret.model.Cart;
+import com.example.csticaret.model.User;
 import java.math.BigDecimal;
 
 public interface ICartService {
@@ -12,4 +13,5 @@ public interface ICartService {
     void addItemToCart(Long cartId, Long productId, int quantity);
     void removeItemFromCart(Long cartId, Long productId);
     Cart getOrCreateGuestCart(String guestId);
+    Cart transferGuestCartToUser(String guestId, User user);
 }
