@@ -97,4 +97,30 @@ public class CartService implements ICartService{
                 return cartRepository.save(newCart);
             });
     }
+
+    @Transactional
+    public Cart transferGuestCartToUser(String guestId, User user) {
+        Cart guestCart = cartRepository.findByGuestId(guestId)
+            .orElse(null);
+
+        if (guestCart == null || guestCart.getItems().isEmpty()) {
+            return getCartByUserId(user.getId());
+        }
+
+        Cart userCart = getCartByUserId(user.getId());
+        
+        // Transfer items from guest cart to user cart
+        guestCart.getItems().forEach(item -> {
+            item.setCart(userCart);
+            userCart.getItems().add(item);
+        });
+        
+        userCart.updateTotalAmount();
+        
+        // Clear and delete guest cart
+        guestCart.getItems().clear();
+        cartRepository.delete(guestCart);
+        
+        return cartRepository.save(userCart);
+    }
 }

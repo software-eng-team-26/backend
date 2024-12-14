@@ -37,14 +37,26 @@ public class CommentService {
     }
 
     public void addRating(Long productId, Long userId, int rating) {
-        boolean hasOrdered = orderRepository.existsByUserIdAndProductIdAndStatus(
+        // Check if order exists and is delivered
+        boolean isDelivered = orderRepository.existsByUserIdAndProductIdAndStatus(
             userId, 
             productId, 
             OrderStatus.DELIVERED
         );
 
-        if (!hasOrdered) {
-            throw new IllegalArgumentException("You need to purchase and receive this product before rating");
+        // Check if order is in processing
+        boolean isProcessing = orderRepository.existsByUserIdAndProductIdAndStatus(
+            userId,
+            productId,
+            OrderStatus.PROCESSING
+        );
+
+        if (isProcessing) {
+            throw new IllegalArgumentException("Your order is still being processed. You can rate the product once it's delivered.");
+        }
+
+        if (!isDelivered) {
+            throw new IllegalArgumentException("You can only rate products that you have purchased and received.");
         }
 
         Product product = productRepository.findById(productId)
@@ -65,14 +77,26 @@ public class CommentService {
     }
 
     public Comment addComment(Long productId, Long userId, String content, Integer rating) {
-        boolean hasOrdered = orderRepository.existsByUserIdAndProductIdAndStatus(
+        // Check if order exists and is delivered
+        boolean isDelivered = orderRepository.existsByUserIdAndProductIdAndStatus(
             userId, 
             productId, 
             OrderStatus.DELIVERED
         );
 
-        if (!hasOrdered) {
-            throw new IllegalArgumentException("You need to purchase and receive this product before commenting");
+        // Check if order is in processing
+        boolean isProcessing = orderRepository.existsByUserIdAndProductIdAndStatus(
+            userId,
+            productId,
+            OrderStatus.PROCESSING
+        );
+
+        if (isProcessing) {
+            throw new IllegalArgumentException("Your order is still being processed. You can comment on the product once it's delivered.");
+        }
+
+        if (!isDelivered) {
+            throw new IllegalArgumentException("You can only comment on products that you have purchased and received.");
         }
 
         User user = userRepository.findById(userId)

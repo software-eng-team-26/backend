@@ -110,7 +110,7 @@ public class OrderController {
             }
 
             // For digital products (courses), mark as DELIVERED immediately after payment
-            order.setOrderStatus(OrderStatus.DELIVERED);
+            order.setOrderStatus(OrderStatus.PROCESSING);
             order = orderRepository.save(order);
 
             // Generate invoice and send email
