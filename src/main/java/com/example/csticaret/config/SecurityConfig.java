@@ -67,10 +67,13 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/comments/add").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/comments/rating").authenticated()
                 .requestMatchers("/api/v1/comments/**").authenticated()
+                    .requestMatchers("/api/products/**").permitAll()
+
+                    .requestMatchers(HttpMethod.POST,"/api/wishlist/add").permitAll()
                 .requestMatchers("/api/v1/carts/**").permitAll()
                 .requestMatchers("/api/v1/orders/**").authenticated()
                 .requestMatchers("/api/v1/checkout/**").authenticated()
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
