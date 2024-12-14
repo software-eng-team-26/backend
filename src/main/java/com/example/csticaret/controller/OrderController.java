@@ -115,7 +115,26 @@ public class OrderController {
                     .body(new ApiResponse<>("Failed to cancel order", null));
         }
     }
-
+    @PostMapping("/{orderId}/refund")
+    public ResponseEntity<ApiResponse<Order>> refundOrder(
+            @PathVariable Long orderId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            User user = userService.getUserByEmail(userDetails.getUsername());
+            Order refundedOrder = orderService.refundOrder(orderId, user.getId());
+            return ResponseEntity.ok(new ApiResponse<>("Order refunded successfully", refundedOrder));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        } catch (Exception e) {
+            log.error("Error refunding order:", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Failed to refund order", null));
+        }
+    }
 
 
 
