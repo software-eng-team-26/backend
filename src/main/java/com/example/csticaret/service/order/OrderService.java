@@ -200,6 +200,27 @@ public class OrderService implements IOrderService {
 
         document.add(table);
     }
+    @Transactional
+    public Order cancelOrder(Long orderId, Long userId) {
+        // Siparişi al
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        // Kullanıcı doğrulama
+        if (!order.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("You do not have permission to cancel this order");
+        }
+
+        // Durum kontrolü
+        if (order.getOrderStatus() == OrderStatus.DELIVERED) {
+            throw new IllegalStateException("Order cannot be cancelled as it is already delivered");
+        }
+
+        // Siparişi iptal et
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        return orderRepository.save(order);
+    }
+
 
     private void addInvoiceTotal(Document document, Order order) throws DocumentException {
         document.add(Chunk.NEWLINE);
@@ -210,8 +231,36 @@ public class OrderService implements IOrderService {
         total.setAlignment(Element.ALIGN_RIGHT);
         document.add(total);
     }
+    @Transactional
+    public Order refundOrder(Long orderId, Long userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        // Kullanıcı kontrolü
+        if (!order.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("You do not have permission to refund this order");
+        }
+
+        // Durum kontrolü
+        if (order.getOrderStatus() != OrderStatus.DELIVERED) {
+            throw new IllegalStateException("Only delivered orders can be refunded");
+        }
+
+        // Tarih kontrolü
+        LocalDate currentDate = LocalDate.now();
+        LocalDate deliveredDate = order.getOrderDate(); // Teslim tarihi sipariş tarihiyle aynıysa güncelleyebilirsiniz
+        if (deliveredDate.plusDays(30).isBefore(currentDate)) {
+            throw new IllegalStateException("Refund period has expired");
+        }
+
+        // İade işlemini gerçekleştir
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        return orderRepository.save(order);
+    }
+
 
     public List<Order> getUserOrders(Long userId) {
         return orderRepository.findByUserIdOrderByOrderDateDesc(userId);
     }
 }
+

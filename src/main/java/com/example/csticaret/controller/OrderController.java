@@ -95,6 +95,29 @@ public class OrderController {
                 .body(new ApiResponse<>("Failed to create order", null));
         }
     }
+    @PostMapping("/{orderId}/cancel")
+    public ResponseEntity<ApiResponse<Order>> cancelOrder(
+            @PathVariable Long orderId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            User user = userService.getUserByEmail(userDetails.getUsername());
+            Order cancelledOrder = orderService.cancelOrder(orderId, user.getId());
+            return ResponseEntity.ok(new ApiResponse<>("Order cancelled successfully", cancelledOrder));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        } catch (Exception e) {
+            log.error("Error cancelling order:", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Failed to cancel order", null));
+        }
+    }
+
+
+
 
     @PostMapping("/{orderId}/complete-payment")
     public ResponseEntity<ApiResponse<Map<String, Object>>> completePayment(

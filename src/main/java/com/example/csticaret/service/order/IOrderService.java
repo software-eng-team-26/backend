@@ -14,4 +14,8 @@ public interface IOrderService {
     String generateInvoicePdf(Order order);
     Resource getInvoicePdf(Order order);
     List<Order> getUserOrders(Long userId);
+
+    Order cancelOrder(Long orderId, Long id);
+
+    Order refundOrder(Long orderId, Long id);
 }

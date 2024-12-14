@@ -5,5 +5,6 @@ public enum OrderStatus {
     PAID,
     PROCESSING,     // Payment is being processed
     PROVISIONING,   // Digital product is being set up (like course access)
-    DELIVERED       // Access granted to digital content
+    DELIVERED,// Access granted to digital content
+    CANCELLED,
 }
