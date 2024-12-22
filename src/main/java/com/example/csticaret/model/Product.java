@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import com.example.csticaret.exception.InsufficientStockException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -19,7 +20,7 @@ public class Product {
     private String name;
     private String brand;
     private BigDecimal price;
-    private int inventory;
+    private Integer inventory;
     private String description;
     private int level;
     private int duration;
@@ -32,7 +33,7 @@ public class Product {
     @ElementCollection
     private List<String> curriculum;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.DETACH)
     @JoinColumn(name = "category_id")
     private Category category;
 
@@ -41,6 +42,18 @@ public class Product {
 
     @Column(nullable = false)
     private Boolean featured = false;
+
+    @Column(nullable = false)
+    private Double averageRating = 0.0;
+
+    @Column(name = "is_on_sale")
+    private Boolean isOnSale = false;
+
+    @Column(name = "discount_rate")
+    private Double discountRate;
+
+    @Column(name = "original_price")
+    private BigDecimal originalPrice;
 
     public Product(String name, String brand, BigDecimal price, int inventory, String description,
                    int level, int duration, int moduleCount, boolean certification, String instructorName,
@@ -69,5 +82,16 @@ public class Product {
 
     public void setFeatured(Boolean featured) {
         this.featured = featured;
+    }
+
+    public boolean hasStock(int quantity) {
+        return inventory >= quantity;
+    }
+
+    public void decreaseStock(int quantity) {
+        if (!hasStock(quantity)) {
+            throw new InsufficientStockException("Not enough stock available");
+        }
+        this.inventory -= quantity;
     }
 }

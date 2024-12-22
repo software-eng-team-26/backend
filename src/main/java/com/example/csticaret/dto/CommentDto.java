@@ -1,13 +1,11 @@
 package com.example.csticaret.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 public class CommentDto {
     private Long productId;
     private Long userId;
     private String content;
-    private int rating;
+    private Integer rating;
 }

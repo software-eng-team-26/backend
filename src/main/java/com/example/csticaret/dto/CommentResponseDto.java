@@ -1,15 +1,29 @@
 package com.example.csticaret.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.example.csticaret.model.Comment;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
 public class CommentResponseDto {
     private Long id;
     private String content;
-    private int rating;
+    private Integer rating;
     private boolean approved;
     private String userFullName;
     private String productName;
+    private String createdAt;
+
+    public static CommentResponseDto fromComment(Comment comment) {
+        CommentResponseDto dto = new CommentResponseDto();
+        dto.setId(comment.getId());
+        dto.setContent(comment.getContent());
+        dto.setRating(comment.getRating());
+        dto.setApproved(comment.isApproved());
+        dto.setUserFullName(comment.getUser().getFirstName() + " " + comment.getUser().getLastName());
+        dto.setProductName(comment.getProduct().getName());
+        dto.setCreatedAt(comment.getCreatedAt().toString());
+        return dto;
+    }
 }
