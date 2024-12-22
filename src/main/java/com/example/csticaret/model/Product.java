@@ -33,7 +33,7 @@ public class Product {
     @ElementCollection
     private List<String> curriculum;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.DETACH)
     @JoinColumn(name = "category_id")
     private Category category;
 
@@ -45,6 +45,15 @@ public class Product {
 
     @Column(nullable = false)
     private Double averageRating = 0.0;
+
+    @Column(name = "is_on_sale")
+    private Boolean isOnSale = false;
+
+    @Column(name = "discount_rate")
+    private Double discountRate;
+
+    @Column(name = "original_price")
+    private BigDecimal originalPrice;
 
     public Product(String name, String brand, BigDecimal price, int inventory, String description,
                    int level, int duration, int moduleCount, boolean certification, String instructorName,

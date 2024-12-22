@@ -26,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -48,10 +49,19 @@ public class OrderController {
             @RequestBody @Valid ShippingDetailsRequest shippingDetails,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
+            if (userDetails == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>("User not authenticated", null));
+            }
+
             User user = userService.getUserByEmail(userDetails.getUsername());
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>("User not found", null));
+            }
+
             Cart cart = cartService.getCartByUserId(user.getId());
-            
-            if (cart.getItems().isEmpty()) {
+            if (cart == null || cart.getItems().isEmpty()) {
                 return ResponseEntity.badRequest()
                     .body(new ApiResponse<>("Cart is empty", null));
             }
@@ -86,9 +96,12 @@ public class OrderController {
             
             Map<String, Object> response = new HashMap<>();
             response.put("order", order);
-            response.put("redirectUrl", "/payment/" + order.getOrderId());
+            response.put("redirectUrl", "/payment/" + order.getId());
             
             return ResponseEntity.ok(new ApiResponse<>("Order created successfully", response));
+        } catch (InsufficientStockException e) {
+            return ResponseEntity.badRequest()
+                .body(new ApiResponse<>(e.getMessage(), null));
         } catch (Exception e) {
             log.error("Error creating order:", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -197,6 +210,11 @@ public class OrderController {
     public ResponseEntity<ApiResponse<List<Order>>> getUserOrders(
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
+            if (userDetails == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>("User not authenticated", null));
+            }
+            
             User user = userService.getUserByEmail(userDetails.getUsername());
             List<Order> orders = orderService.getUserOrders(user.getId());
             return ResponseEntity.ok(new ApiResponse<>("Orders retrieved successfully", orders));
@@ -229,20 +247,30 @@ public class OrderController {
     }
 
     @PostMapping("/{orderId}/update-status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Order>> updateOrderStatus(
             @PathVariable Long orderId,
-            @RequestParam OrderStatus status,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @RequestParam OrderStatus status) {
         try {
-            Order order = orderService.getOrderById(orderId);
-            order.setOrderStatus(status);
-            order = orderRepository.save(order);
-            
+            Order order = orderService.updateOrderStatus(orderId, status);
             return ResponseEntity.ok(new ApiResponse<>("Order status updated successfully", order));
         } catch (Exception e) {
             log.error("Error updating order status:", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>("Failed to update order status", null));
+        }
+    }
+
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<Order>>> getAllOrders() {
+        try {
+            List<Order> orders = orderService.getAllOrders();
+            return ResponseEntity.ok(new ApiResponse<>("Orders retrieved successfully", orders));
+        } catch (Exception e) {
+            log.error("Error fetching all orders:", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>("Failed to fetch orders", null));
         }
     }
 }

@@ -42,8 +42,8 @@ public class User {
     @JsonIgnore
     private Cart cart;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
+    @OneToMany(mappedBy = "user")
+    @JsonBackReference
     private List<Order> orders;
 
     @ManyToMany(fetch = FetchType.EAGER,

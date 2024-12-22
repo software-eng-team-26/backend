@@ -26,8 +26,9 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -54,65 +55,34 @@ public class OrderService implements IOrderService {
     @Override
     @Transactional
     public Order createOrderFromCart(Cart cart, ShippingDetailsRequest shippingDetails) {
+        // Create new order
         Order order = new Order();
         order.setUser(cart.getUser());
-        order.setOrderDate(LocalDate.now());
-        order.setTotalAmount(cart.getTotalAmount());
+        order.setOrderDate(LocalDateTime.now());
         order.setOrderStatus(OrderStatus.PENDING);
-
-        // Set shipping details
-        order.setShippingAddress(String.format("%s\n%s\n%s, %s %s\n%s",
-                shippingDetails.getAddress(),
-                shippingDetails.getCity(),
-                shippingDetails.getState(),
-                shippingDetails.getZipCode(),
-                shippingDetails.getCountry(),
-                shippingDetails.getPhone()
-        ));
-
-        // Process each cart item: convert to order item and update stock
+        order.setTotalAmount(cart.getTotalAmount());
+        order.setShippingAddress(shippingDetails.getAddress());
+        order.setShippingEmail(shippingDetails.getEmail());
+        order.setShippingPhone(shippingDetails.getPhone());
+        
+        // Save the order first to get an ID
+        order = orderRepository.save(order);
+        
+        // Create and add order items
+        final Order savedOrder = order; // Create final reference for lambda
         cart.getItems().forEach(cartItem -> {
-            Product product = cartItem.getProduct();
-
-            // Decrease stock
-            product.decreaseStock(cartItem.getQuantity());
-            productRepository.save(product); // Save updated stock to the database
-
-            // Convert cart item to order item
             OrderItem orderItem = new OrderItem(
-                    order,
-                    product,
-                    cartItem.getQuantity(),
-                    cartItem.getUnitPrice()
+                savedOrder,
+                cartItem.getProduct(),
+                cartItem.getQuantity(),
+                cartItem.getUnitPrice()
             );
-            order.getOrderItems().add(orderItem);
+            savedOrder.addItem(orderItem);
         });
 
-        // Save the order
-        Order savedOrder = orderRepository.save(order);
-
-        // Generate invoice and send email
-        try {
-            log.info("Attempting to generate invoice and send email for order: {}", savedOrder.getOrderId());
-            String invoicePath = generateInvoicePdf(savedOrder);
-            log.info("Invoice generated at path: {}", invoicePath);
-            
-            emailService.sendOrderConfirmation(
-                shippingDetails.getEmail(),
-                savedOrder,
-                invoicePath
-            );
-            log.info("Email sent successfully for order: {}", savedOrder.getOrderId());
-        } catch (Exception e) {
-            log.error("Failed to send order confirmation email for order: {}", savedOrder.getOrderId(), e);
-        }
-
-        // Clear the cart after successful order creation
-        cartService.clearCart(cart.getId());
-
-        return savedOrder;
+        // Save again with items
+        return orderRepository.save(savedOrder);
     }
-
 
     @Override
     public Order getOrderById(Long orderId) {
@@ -131,7 +101,7 @@ public class OrderService implements IOrderService {
     public String generateInvoicePdf(Order order) {
         try {
             Files.createDirectories(Path.of(INVOICE_DIR));
-            String fileName = String.format("%s/invoice_%d.pdf", INVOICE_DIR, order.getOrderId());
+            String fileName = String.format("%s/invoice_%d.pdf", INVOICE_DIR, order.getId());
             Document document = new Document();
             PdfWriter.getInstance(document, new FileOutputStream(fileName));
 
@@ -149,7 +119,7 @@ public class OrderService implements IOrderService {
 
     @Override
     public Resource getInvoicePdf(Order order) {
-        String fileName = String.format("%s/invoice_%d.pdf", INVOICE_DIR, order.getOrderId());
+        String fileName = String.format("%s/invoice_%d.pdf", INVOICE_DIR, order.getId());
         Resource resource = new FileSystemResource(fileName);
         
         if (!resource.exists()) {
@@ -169,16 +139,16 @@ public class OrderService implements IOrderService {
         document.add(title);
         document.add(Chunk.NEWLINE);
 
-        document.add(new Paragraph("Order #: " + order.getOrderId(), normalFont));
+        document.add(new Paragraph("Order #: " + order.getId(), normalFont));
         document.add(new Paragraph("Date: " + order.getOrderDate().format(DateTimeFormatter.ISO_DATE), normalFont));
         document.add(new Paragraph("Customer: " + order.getUser().getFirstName() + " " + order.getUser().getLastName(), normalFont));
         document.add(Chunk.NEWLINE);
     }
 
     private void addInvoiceItems(Document document, Order order) throws DocumentException {
-        PdfPTable table = new PdfPTable(4); // 4 columns
+        PdfPTable table = new PdfPTable(4);
         table.setWidthPercentage(100);
-        table.setWidths(new float[]{2, 1, 1, 1}); // Relative column widths
+        table.setWidths(new float[]{2, 1, 1, 1});
 
         // Add header row
         Stream.of("Product", "Quantity", "Price", "Total")
@@ -191,7 +161,7 @@ public class OrderService implements IOrderService {
             });
 
         // Add items
-        for (OrderItem item : order.getOrderItems()) {
+        for (OrderItem item : order.getItems()) {
             table.addCell(item.getProduct().getName());
             table.addCell(String.valueOf(item.getQuantity()));
             table.addCell(String.format("$%.2f", item.getPrice()));
@@ -247,8 +217,8 @@ public class OrderService implements IOrderService {
         }
 
         // Tarih kontrolü
-        LocalDate currentDate = LocalDate.now();
-        LocalDate deliveredDate = order.getOrderDate(); // Teslim tarihi sipariş tarihiyle aynıysa güncelleyebilirsiniz
+        LocalDateTime currentDate = LocalDateTime.now();
+        LocalDateTime deliveredDate = order.getOrderDate(); // Teslim tarihi sipariş tarihiyle aynıysa güncelleyebilirsiniz
         if (deliveredDate.plusDays(30).isBefore(currentDate)) {
             throw new IllegalStateException("Refund period has expired");
         }
@@ -260,7 +230,38 @@ public class OrderService implements IOrderService {
 
 
     public List<Order> getUserOrders(Long userId) {
-        return orderRepository.findByUserIdOrderByOrderDateDesc(userId);
+        List<Order> orders = orderRepository.findByUserId(userId);
+        // Sort by order date descending
+        orders.sort((o1, o2) -> o2.getOrderDate().compareTo(o1.getOrderDate()));
+        return orders;
+    }
+
+    @Override
+    public List<Order> getAllOrders() {
+        return orderRepository.findAll();
+    }
+
+    @Override
+    public Order updateOrderStatus(Long id, OrderStatus status) {
+        Order order = orderRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        
+        order.setOrderStatus(status);
+        
+        // If order is cancelled, restore product inventory
+        if (status == OrderStatus.CANCELLED) {
+            restoreInventory(order);
+        }
+        
+        return orderRepository.save(order);
+    }
+
+    private void restoreInventory(Order order) {
+        order.getItems().forEach(item -> {
+            Product product = item.getProduct();
+            product.setInventory(product.getInventory() + item.getQuantity());
+            productRepository.save(product);
+        });
     }
 }
 

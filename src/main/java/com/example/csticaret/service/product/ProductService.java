@@ -14,6 +14,7 @@ import com.example.csticaret.request.ProductUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -69,10 +70,17 @@ public class ProductService implements IProductService {
     }
 
     @Override
+    @Transactional
     public void deleteProductById(Long id) {
-        productRepository.findById(id)
-                .ifPresentOrElse(productRepository::delete,
-                        () -> {throw new ResourceNotFoundException("Product not found!");});
+        Product product = productRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Product not found!"));
+            
+        // Remove category association before deleting
+        product.setCategory(null);
+        productRepository.save(product);
+        
+        // Now delete the product
+        productRepository.delete(product);
     }
 
     @Override

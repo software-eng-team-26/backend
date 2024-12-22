@@ -66,13 +66,19 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/comments/approved/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/comments/add").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/comments/rating").authenticated()
-                .requestMatchers("/api/v1/comments/**").authenticated()
-                    .requestMatchers("/api/products/**").permitAll()
-
-                    .requestMatchers(HttpMethod.POST,"/api/wishlist/add").permitAll()
+                .requestMatchers("/api/v1/comments/admin/**").permitAll()
+                .requestMatchers("/api/v1/comments/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/orders/all").permitAll()
+                .requestMatchers(HttpMethod.PUT, "/api/v1/orders/*/status").permitAll()
+                .requestMatchers("/api/v1/orders/create").authenticated()
+                .requestMatchers("/api/v1/orders/my-orders").authenticated()
+                .requestMatchers("/api/v1/orders/admin/**").permitAll()
+                .requestMatchers("/api/v1/orders/**").authenticated()
+                .requestMatchers("/api/products/**").permitAll()
+                .requestMatchers(HttpMethod.POST,"/api/wishlist/add").permitAll()
                 .requestMatchers("/api/v1/carts/**").permitAll()
-                .requestMatchers("/api/v1/orders/**").permitAll()
                 .requestMatchers("/api/v1/checkout/**").authenticated()
+                .requestMatchers("/api/v1/discounts/**").permitAll()
                 .anyRequest().permitAll()
             )
             .sessionManagement(session -> session
@@ -87,18 +93,23 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
-        configuration.setAllowedHeaders(Arrays.asList(
-            "Authorization",
-            "Content-Type",
-            "Accept",
-            "Origin",
-            "Access-Control-Request-Method",
-            "Access-Control-Request-Headers"
-        ));
-        configuration.setExposedHeaders(Arrays.asList("Authorization"));
-        configuration.setAllowCredentials(true);
+        
+        // Allow frontend origin
+        configuration.addAllowedOrigin("http://localhost:5173");
+        
+        // Allow all common methods
+        configuration.addAllowedMethod("*");
+        
+        // Allow specific headers
+        configuration.addAllowedHeader("Authorization");
+        configuration.addAllowedHeader("Content-Type");
+        configuration.addAllowedHeader("Accept");
+        configuration.addAllowedHeader("Origin");
+        
+        // Don't need credentials since we're using token auth
+        configuration.setAllowCredentials(false);
+        
+        // Cache preflight for 1 hour
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

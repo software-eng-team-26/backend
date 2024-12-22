@@ -11,10 +11,12 @@ import java.util.List;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
+    List<Order> findByUserId(Long userId);
+
     List<Order> findByUserIdOrderByOrderDateDesc(Long userId);
 
     @Query("SELECT CASE WHEN COUNT(o) > 0 THEN true ELSE false END FROM Order o " +
-           "JOIN o.orderItems oi " +
+           "JOIN o.items oi " +
            "WHERE o.user.id = :userId " +
            "AND oi.product.id = :productId " +
            "AND o.orderStatus = :status")

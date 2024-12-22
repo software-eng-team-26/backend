@@ -60,7 +60,7 @@ public class EmailService {
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("from", fromEmail);
             requestBody.put("to", Collections.singletonList(toEmail));
-            requestBody.put("subject", "Your Order Confirmation #" + order.getOrderId());
+            requestBody.put("subject", "Your Order Confirmation #" + order.getId());
             requestBody.put("html", buildOrderConfirmationEmail(order));
             requestBody.put("attachments", Collections.singletonList(attachment));
 
@@ -68,7 +68,7 @@ public class EmailService {
             log.info("Preparing to send email with Resend API");
             log.info("From: {}", fromEmail);
             log.info("To: {}", toEmail);
-            log.info("Subject: Order Confirmation #{}", order.getOrderId());
+            log.info("Subject: Order Confirmation #{}", order.getId());
 
             // Set up headers
             HttpHeaders headers = new HttpHeaders();
@@ -115,7 +115,7 @@ public class EmailService {
             </body>
             </html>
             """,
-            order.getOrderId(),
+            order.getId(),
             order.getOrderDate(),
             order.getTotalAmount()
         );
