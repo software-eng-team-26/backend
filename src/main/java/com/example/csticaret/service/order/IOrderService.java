@@ -18,7 +18,7 @@ public interface IOrderService {
 
     Order cancelOrder(Long orderId, Long id);
 
-    Order refundOrder(Long orderId, Long id);
+    Order refundOrder(Long orderId, List<Long> orderItemIds, Long id );
 
     List<Order> getAllOrders();
     Order updateOrderStatus(Long id, OrderStatus status);

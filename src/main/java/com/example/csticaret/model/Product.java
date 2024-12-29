@@ -76,6 +76,16 @@ public class Product {
         this.featured = false;
     }
 
+    // Mevcut stoğu almak için getStock metodu
+    public int getStock() {
+        return inventory;
+    }
+
+    // Stoğu güncellemek için setStock metodu
+    public void setStock(int stock) {
+        this.inventory = stock;
+    }
+
     public Boolean getFeatured() {
         return featured;
     }

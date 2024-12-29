@@ -202,7 +202,7 @@ public class OrderService implements IOrderService {
         document.add(total);
     }
     @Transactional
-    public Order refundOrder(Long orderId, Long userId) {
+    public Order refundOrder(Long orderId, Long userId, List<Long> orderItemIds) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
@@ -221,6 +221,17 @@ public class OrderService implements IOrderService {
         LocalDateTime deliveredDate = order.getOrderDate(); // Teslim tarihi sipariş tarihiyle aynıysa güncelleyebilirsiniz
         if (deliveredDate.plusDays(30).isBefore(currentDate)) {
             throw new IllegalStateException("Refund period has expired");
+        }
+
+        // Ürün bazlı iade işlemi
+        // Ürün bazında refund işlemi
+        for (OrderItem item : order.getItems()) {
+            if (orderItemIds.contains(item.getId())) {
+                item.setRefunded(true); // İade durumu işaretleniyor
+                Product product = item.getProduct();
+                product.setStock(product.getStock() + item.getQuantity()); // Stok güncellemesi
+                productRepository.save(product);
+            }
         }
 
         // İade işlemini gerçekleştir

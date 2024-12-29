@@ -131,10 +131,11 @@ public class OrderController {
     @PostMapping("/{orderId}/refund")
     public ResponseEntity<ApiResponse<Order>> refundOrder(
             @PathVariable Long orderId,
+            @RequestBody List<Long> orderItemsIds, //product ids for refunable ones
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
             User user = userService.getUserByEmail(userDetails.getUsername());
-            Order refundedOrder = orderService.refundOrder(orderId, user.getId());
+            Order refundedOrder = orderService.refundOrder(orderId, orderItemsIds, user.getId());
             return ResponseEntity.ok(new ApiResponse<>("Order refunded successfully", refundedOrder));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
