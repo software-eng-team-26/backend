@@ -2,7 +2,8 @@ package com.example.csticaret.Controller.User;
 
 
 
-import com.example.csticaret.Controller.UserController;
+
+import com.example.csticaret.controller.UserController;
 import com.example.csticaret.dto.UserDto;
 import com.example.csticaret.exceptions.AlreadyExistsException;
 import com.example.csticaret.exceptions.ResourceNotFoundException;
