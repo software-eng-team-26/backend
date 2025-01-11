@@ -25,4 +25,6 @@ public interface IOrderService {
     Order updateOrderStatus(Long id, OrderStatus status);
 
     OrderItem requestRefund(Long orderId, Long itemId, Long id);
+
+    OrderItem approveRefund(Long orderId, Long itemId, boolean approved);
 }

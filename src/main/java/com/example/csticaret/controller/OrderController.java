@@ -161,6 +161,25 @@ public class OrderController {
                     .body(new ApiResponse<>("Failed to submit refund request", null));
         }
     }
+    @PostMapping("/{orderId}/items/{itemId}/refund/approve")
+    public ResponseEntity<ApiResponse<OrderItem>> approveRefund(
+            @PathVariable Long orderId,
+            @PathVariable Long itemId,
+            @RequestParam boolean approved) {
+        try {
+            OrderItem updatedOrderItem = orderService.approveRefund(orderId, itemId, approved);
+            String message = approved ? "Refund approved successfully" : "Refund rejected successfully";
+            return ResponseEntity.ok(new ApiResponse<>(message, updatedOrderItem));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        } catch (Exception e) {
+            log.error("Error approving refund:", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Failed to process refund approval", null));
+        }
+    }
+
 
 
 

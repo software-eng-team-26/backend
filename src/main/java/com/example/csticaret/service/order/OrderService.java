@@ -113,6 +113,41 @@ public class OrderService implements IOrderService {
         orderItem.setRefundStatus(RefundStatus.REQUESTED);
         return orderItemRepository.save(orderItem);
     }
+    @Transactional
+    public OrderItem approveRefund(Long orderId, Long itemId, boolean approved) {
+        // OrderItem'ı bul
+        OrderItem orderItem = orderItemRepository.findByOrderIdAndId(orderId, itemId)
+                .orElseThrow(() -> new IllegalArgumentException("Order item not found"));
+
+        // Refund durumunu kontrol et
+        if (orderItem.getRefundStatus() != RefundStatus.REQUESTED) {
+            throw new IllegalStateException("Refund is not in a requested state");
+        }
+
+        // Refund durumunu güncelle
+        orderItem.setRefundStatus(approved ? RefundStatus.APPROVED : RefundStatus.REJECTED);
+
+        // İlgili işlemleri yap (örneğin, geri ödeme sürecini başlat)
+        if (approved) {
+            processRefund(orderItem);
+        }
+
+        return orderItemRepository.save(orderItem);
+    }
+    private void processRefund(OrderItem orderItem) {
+        // Stok iadesi yapılabilir
+        Product product = orderItem.getProduct();
+        product.setInventory(product.getInventory() + orderItem.getQuantity());
+        productRepository.save(product);
+
+        // Kullanıcıya bilgilendirme e-postası gönderilebilir
+        String email = orderItem.getOrder().getUser().getEmail();
+        String message = "Your refund request for product " + product.getName() + " has been approved.";
+
+    }
+
+
+
 
 
     @Override
