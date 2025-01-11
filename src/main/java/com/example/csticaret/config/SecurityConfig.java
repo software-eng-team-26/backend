@@ -79,7 +79,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/carts/**").permitAll()
                 .requestMatchers("/api/v1/checkout/**").authenticated()
                 .requestMatchers("/api/v1/discounts/**").permitAll()
-                .anyRequest().permitAll()
+
+
+
+
+                    .anyRequest().permitAll()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)

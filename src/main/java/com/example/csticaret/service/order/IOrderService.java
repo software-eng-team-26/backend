@@ -2,6 +2,7 @@ package com.example.csticaret.service.order;
 
 import com.example.csticaret.model.Order;
 import com.example.csticaret.model.Cart;
+import com.example.csticaret.model.OrderItem;
 import com.example.csticaret.request.ShippingDetailsRequest;
 import com.example.csticaret.enums.OrderStatus;
 import org.springframework.core.io.Resource;
@@ -18,8 +19,10 @@ public interface IOrderService {
 
     Order cancelOrder(Long orderId, Long id);
 
-    Order refundOrder(Long orderId, Long id);
+
 
     List<Order> getAllOrders();
     Order updateOrderStatus(Long id, OrderStatus status);
+
+    OrderItem requestRefund(Long orderId, Long itemId, Long id);
 }

@@ -1,8 +1,10 @@
 package com.example.csticaret.service.order;
 
 import com.example.csticaret.enums.OrderStatus;
+import com.example.csticaret.enums.RefundStatus;
 import com.example.csticaret.exceptions.ResourceNotFoundException;
 import com.example.csticaret.model.*;
+import com.example.csticaret.repository.OrderItemRepository;
 import com.example.csticaret.repository.OrderRepository;
 import com.example.csticaret.repository.ProductRepository;
 import com.example.csticaret.request.PaymentRequest;
@@ -41,6 +43,7 @@ public class OrderService implements IOrderService {
     private final ProductRepository productRepository;
     private final EmailService emailService;
     private static final String INVOICE_DIR = "invoices";
+    private final OrderItemRepository orderItemRepository;
 
     @PostConstruct
     public void init() {
@@ -51,6 +54,7 @@ public class OrderService implements IOrderService {
             log.error("Failed to create invoice directory", e);
         }
     }
+
 
     @Override
     @Transactional
@@ -83,6 +87,33 @@ public class OrderService implements IOrderService {
         // Save again with items
         return orderRepository.save(savedOrder);
     }
+    @Transactional
+    public OrderItem requestRefund(Long orderId, Long itemId, Long userId) {
+        // Siparişi bul
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        // Siparişin kullanıcıya ait olduğunu kontrol et
+        if (!order.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("You do not have permission to request a refund for this order");
+        }
+
+        // İlgili sipariş kalemini bul
+        OrderItem orderItem = order.getItems().stream()
+                .filter(item -> item.getId().equals(itemId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Order item not found with id: " + itemId));
+
+        // İade durumu kontrolü
+        if (orderItem.getRefundStatus() != RefundStatus.NONE) {
+            throw new IllegalStateException("Refund has already been requested for this item");
+        }
+
+        // Refund talebini işaretle
+        orderItem.setRefundStatus(RefundStatus.REQUESTED);
+        return orderItemRepository.save(orderItem);
+    }
+
 
     @Override
     public Order getOrderById(Long orderId) {
@@ -201,32 +232,7 @@ public class OrderService implements IOrderService {
         total.setAlignment(Element.ALIGN_RIGHT);
         document.add(total);
     }
-    @Transactional
-    public Order refundOrder(Long orderId, Long userId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
-        // Kullanıcı kontrolü
-        if (!order.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("You do not have permission to refund this order");
-        }
-
-        // Durum kontrolü
-        if (order.getOrderStatus() != OrderStatus.DELIVERED) {
-            throw new IllegalStateException("Only delivered orders can be refunded");
-        }
-
-        // Tarih kontrolü
-        LocalDateTime currentDate = LocalDateTime.now();
-        LocalDateTime deliveredDate = order.getOrderDate(); // Teslim tarihi sipariş tarihiyle aynıysa güncelleyebilirsiniz
-        if (deliveredDate.plusDays(30).isBefore(currentDate)) {
-            throw new IllegalStateException("Refund period has expired");
-        }
-
-        // İade işlemini gerçekleştir
-        order.setOrderStatus(OrderStatus.CANCELLED);
-        return orderRepository.save(order);
-    }
 
 
     public List<Order> getUserOrders(Long userId) {

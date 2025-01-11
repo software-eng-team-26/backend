@@ -1,8 +1,6 @@
 package com.example.csticaret.controller;
 
-import com.example.csticaret.model.Order;
-import com.example.csticaret.model.Cart;
-import com.example.csticaret.model.User;
+import com.example.csticaret.model.*;
 import com.example.csticaret.request.ShippingDetailsRequest;
 import com.example.csticaret.response.ApiResponse;
 import com.example.csticaret.service.order.IOrderService;
@@ -11,10 +9,8 @@ import com.example.csticaret.service.user.IUserService;
 import com.example.csticaret.service.email.EmailService;
 import com.example.csticaret.repository.OrderRepository;
 import com.example.csticaret.enums.OrderStatus;
-import com.example.csticaret.model.Product;
 import com.example.csticaret.repository.ProductRepository;
 import com.example.csticaret.exception.InsufficientStockException;
-import com.example.csticaret.model.CartItem;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,11 +19,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -128,14 +127,28 @@ public class OrderController {
                     .body(new ApiResponse<>("Failed to cancel order", null));
         }
     }
-    @PostMapping("/{orderId}/refund")
-    public ResponseEntity<ApiResponse<Order>> refundOrder(
+    @PostMapping("/{orderId}/items/{itemId}/refund")
+    public ResponseEntity<ApiResponse<OrderItem>> requestRefund(
             @PathVariable Long orderId,
+            @PathVariable Long itemId,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
             User user = userService.getUserByEmail(userDetails.getUsername());
-            Order refundedOrder = orderService.refundOrder(orderId, user.getId());
-            return ResponseEntity.ok(new ApiResponse<>("Order refunded successfully", refundedOrder));
+            Order order = orderService.getOrderById(orderId);
+
+            // 1. Sipariş tarihi ile bugünün tarihini karşılaştır
+            LocalDate orderDate = order.getOrderDate().toLocalDate();
+            LocalDate currentDate = LocalDate.now();
+            long daysBetween = ChronoUnit.DAYS.between(orderDate, currentDate);
+
+            // 2. 30 günden büyükse refund reddedilir
+            if (daysBetween > 30) {
+                throw new IllegalArgumentException("Refund requests can only be made within 30 days after delivery.");
+            }
+
+            // 3. Refund işlemini gerçekleştir
+            OrderItem orderItem = orderService.requestRefund(orderId, itemId, user.getId());
+            return ResponseEntity.ok(new ApiResponse<>("Refund request submitted successfully", orderItem));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ApiResponse<>(e.getMessage(), null));
@@ -143,11 +156,16 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>(e.getMessage(), null));
         } catch (Exception e) {
-            log.error("Error refunding order:", e);
+            log.error("Error submitting refund request:", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>("Failed to refund order", null));
+                    .body(new ApiResponse<>("Failed to submit refund request", null));
         }
     }
+
+
+
+
+
 
 
 
