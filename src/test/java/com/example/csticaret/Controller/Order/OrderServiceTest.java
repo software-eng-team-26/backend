@@ -10,6 +10,7 @@ import com.example.csticaret.request.ShippingDetailsRequest;
 import com.example.csticaret.service.cart.ICartService;
 import com.example.csticaret.service.email.EmailService;
 import com.example.csticaret.service.order.OrderService;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -230,5 +231,44 @@ class OrderServiceTest {
         assertEquals(1, result.size());
         verify(orderRepository, times(1)).findByUserId(userId);
     }
+
+    @Test
+    void testCreateOrderFromCart_InsufficientInventory() {
+        // Arrange
+        Cart mockCart = getCart();
+
+        ShippingDetailsRequest shippingDetails = new ShippingDetailsRequest();
+        shippingDetails.setAddress("123 Test Street");
+        shippingDetails.setEmail("test@example.com");
+        shippingDetails.setPhone("1234567890");
+
+        // Act & Assert
+        assertThrows(IllegalStateException.class, () -> orderService.createOrderFromCart(mockCart, shippingDetails));
+        verify(orderRepository, never()).save(any(Order.class)); // Ensure no order is saved
+    }
+
+    @NotNull
+    private static Cart getCart() {
+        User mockUser = new User();
+        mockUser.setId(1L);
+
+        Product mockProduct = new Product();
+        mockProduct.setId(1L);
+        mockProduct.setInventory(1); // Insufficient inventory
+        mockProduct.setPrice(new BigDecimal("100.00"));
+
+        CartItem mockCartItem = new CartItem();
+        mockCartItem.setProduct(mockProduct);
+        mockCartItem.setQuantity(2); // Requested quantity exceeds inventory
+
+        Cart mockCart = new Cart();
+        mockCart.setUser(mockUser);
+        mockCart.setTotalAmount(new BigDecimal("200.00"));
+        mockCart.setItems(Set.of(mockCartItem));
+        return mockCart;
+    }
+
 }
+
+
 
