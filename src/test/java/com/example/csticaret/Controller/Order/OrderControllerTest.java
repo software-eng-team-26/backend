@@ -93,14 +93,14 @@ class OrderControllerTest {
         ResponseEntity<ApiResponse<Map<String, Object>>> response = orderController.createOrder(shippingDetails, null);
 
         // Assert
-        Assertions.assertEquals(401, response.getStatusCodeValue());
-        Assertions.assertEquals("User not authenticated", response.getBody().getMessage());
+        validateResponse(response, 401, "User not authenticated", null);
     }
 
     @Test
     void testCancelOrder_Success() {
         // Arrange
         Long orderId = 1L;
+
         User mockUser = new User();
         mockUser.setId(1L);
 
@@ -116,10 +116,15 @@ class OrderControllerTest {
         ResponseEntity<ApiResponse<Order>> response = orderController.cancelOrder(orderId, userDetails);
 
         // Assert
-        Assertions.assertEquals(200, response.getStatusCodeValue());
-        Assertions.assertEquals("Order cancelled successfully", response.getBody().getMessage());
-        Assertions.assertEquals(mockOrder, response.getBody().getData());
+        validateResponse(response, 200, "Order cancelled successfully", mockOrder);
         Mockito.verify(orderService, Mockito.times(1)).cancelOrder(orderId, 1L);
+    }
+
+    // Helper Method: Validates ResponseEntity structure for reusability
+    private <T> void validateResponse(ResponseEntity<ApiResponse<T>> response, int statusCode, String message, T data) {
+        Assertions.assertEquals(statusCode, response.getStatusCodeValue());
+        Assertions.assertEquals(message, response.getBody().getMessage());
+        Assertions.assertEquals(data, response.getBody().getData());
     }
 
     @Test
