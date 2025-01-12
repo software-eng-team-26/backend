@@ -1,9 +1,5 @@
-package com.example.csticaret.Controller.User;
+package com.example.csticaret.controller;
 
-
-
-
-import com.example.csticaret.controller.UserController;
 import com.example.csticaret.dto.UserDto;
 import com.example.csticaret.exceptions.AlreadyExistsException;
 import com.example.csticaret.exceptions.ResourceNotFoundException;
@@ -12,7 +8,6 @@ import com.example.csticaret.request.CreateUserRequest;
 import com.example.csticaret.request.SignInRequest;
 import com.example.csticaret.request.UserUpdateRequest;
 import com.example.csticaret.response.ApiResponse;
-import com.example.csticaret.response.AuthenticationResponse;
 import com.example.csticaret.service.jwt.JwtService;
 import com.example.csticaret.service.user.IUserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +38,6 @@ class UserControllerTest {
 
     @Test
     void testGetUserById_Success() {
-        // Arrange
         Long userId = 1L;
         User mockUser = new User();
         mockUser.setId(userId);
@@ -53,10 +47,8 @@ class UserControllerTest {
         when(userService.getUserById(userId)).thenReturn(mockUser);
         when(userService.convertUserToDto(mockUser)).thenReturn(mockUserDto);
 
-        // Act
         ResponseEntity<ApiResponse> response = userController.getUserById(userId);
 
-        // Assert
         assertEquals(200, response.getStatusCodeValue());
         assertEquals("Success", response.getBody().getMessage());
         assertEquals(mockUserDto, response.getBody().getData());
@@ -66,14 +58,11 @@ class UserControllerTest {
 
     @Test
     void testGetUserById_NotFound() {
-        // Arrange
         Long userId = 1L;
         when(userService.getUserById(userId)).thenThrow(new ResourceNotFoundException("User not found!"));
 
-        // Act
         ResponseEntity<ApiResponse> response = userController.getUserById(userId);
 
-        // Assert
         assertEquals(404, response.getStatusCodeValue());
         assertEquals("User not found!", response.getBody().getMessage());
         verify(userService, times(1)).getUserById(userId);
@@ -81,7 +70,6 @@ class UserControllerTest {
 
     @Test
     void testCreateUser_Success() {
-        // Arrange
         CreateUserRequest request = new CreateUserRequest();
         request.setEmail("test@example.com");
         request.setPassword("password123");
@@ -96,12 +84,11 @@ class UserControllerTest {
 
         when(userService.createUser(request)).thenReturn(mockUser);
         when(jwtService.generateToken(mockUser)).thenReturn(mockToken);
-        when(userService.convertUserToDto(mockUser)).thenReturn(new UserDto(mockUser.getId(), mockUser.getEmail(), mockUser.getFirstName(), mockUser.getLastName()));
+        when(userService.convertUserToDto(mockUser))
+                .thenReturn(new UserDto(mockUser.getId(), mockUser.getEmail(), mockUser.getFirstName(), mockUser.getLastName()));
 
-        // Act
         ResponseEntity<ApiResponse> response = userController.createUser(request);
 
-        // Assert
         assertEquals(200, response.getStatusCodeValue());
         assertEquals("User created successfully", response.getBody().getMessage());
         verify(userService, times(1)).createUser(request);
@@ -110,16 +97,13 @@ class UserControllerTest {
 
     @Test
     void testCreateUser_AlreadyExists() {
-        // Arrange
         CreateUserRequest request = new CreateUserRequest();
         request.setEmail("test@example.com");
 
         when(userService.createUser(request)).thenThrow(new AlreadyExistsException("Email already exists"));
 
-        // Act
         ResponseEntity<ApiResponse> response = userController.createUser(request);
 
-        // Assert
         assertEquals(409, response.getStatusCodeValue());
         assertEquals("Email already exists", response.getBody().getMessage());
         verify(userService, times(1)).createUser(request);
@@ -127,7 +111,6 @@ class UserControllerTest {
 
     @Test
     void testUpdateUser_Success() {
-        // Arrange
         Long userId = 1L;
         UserUpdateRequest request = new UserUpdateRequest();
         request.setFirstName("UpdatedFirstName");
@@ -141,10 +124,8 @@ class UserControllerTest {
         when(userService.updateUser(request, userId)).thenReturn(mockUser);
         when(userService.convertUserToDto(mockUser)).thenReturn(mockUserDto);
 
-        // Act
         ResponseEntity<ApiResponse> response = userController.updateUser(request, userId);
 
-        // Assert
         assertEquals(200, response.getStatusCodeValue());
         assertEquals("Update User Success!", response.getBody().getMessage());
         assertEquals(mockUserDto, response.getBody().getData());
@@ -154,7 +135,6 @@ class UserControllerTest {
 
     @Test
     void testSignIn_Success() {
-        // Arrange
         SignInRequest request = new SignInRequest();
         request.setEmail("test@example.com");
         request.setPassword("password123");
@@ -170,10 +150,8 @@ class UserControllerTest {
         when(jwtService.generateToken(mockUser)).thenReturn(mockToken);
         when(userService.convertUserToDto(mockUser)).thenReturn(mockUserDto);
 
-        // Act
         ResponseEntity<ApiResponse> response = userController.signIn(request);
 
-        // Assert
         assertEquals(200, response.getStatusCodeValue());
         assertEquals("Sign in successful!", response.getBody().getMessage());
         verify(userService, times(1)).signIn(request);
@@ -182,20 +160,16 @@ class UserControllerTest {
 
     @Test
     void testSignIn_UserNotFound() {
-        // Arrange
         SignInRequest request = new SignInRequest();
         request.setEmail("test@example.com");
         request.setPassword("password123");
 
         when(userService.signIn(request)).thenThrow(new ResourceNotFoundException("User not found"));
 
-        // Act
         ResponseEntity<ApiResponse> response = userController.signIn(request);
 
-        // Assert
         assertEquals(404, response.getStatusCodeValue());
         assertEquals("User not found", response.getBody().getMessage());
         verify(userService, times(1)).signIn(request);
     }
 }
-
