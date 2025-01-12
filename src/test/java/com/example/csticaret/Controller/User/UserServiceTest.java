@@ -183,4 +183,21 @@ class UserServiceTest {
         verify(userRepository, times(1)).findByEmail(request.getEmail());
         verify(passwordEncoder, times(1)).matches(request.getPassword(), mockUser.getPassword());
     }
+
+    @Test
+    void testUpdateUser_UserNotFound() {
+        // Arrange
+        Long userId = 1L;
+        UserUpdateRequest request = new UserUpdateRequest();
+        request.setFirstName("UpdatedFirstName");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> userService.updateUser(request, userId));
+        verify(userRepository, times(1)).findById(userId);
+        verify(userRepository, never()).save(any(User.class));
+    }
+
 }
+
