@@ -1,6 +1,6 @@
 package com.example.csticaret.Controller.Product;
 
-import com.example.csticaret.ProductController;
+import com.example.csticaret.controller.ProductController;
 import com.example.csticaret.dto.ProductDto;
 import com.example.csticaret.exceptions.ResourceNotFoundException;
 import com.example.csticaret.model.Product;

@@ -2,7 +2,7 @@ package com.example.csticaret.Controller.Wishlist;
 
 
 
-import com.example.csticaret.WishlistController;
+import com.example.csticaret.controller.WishlistController;
 import com.example.csticaret.model.Product;
 import com.example.csticaret.model.User;
 import com.example.csticaret.model.Wishlist;

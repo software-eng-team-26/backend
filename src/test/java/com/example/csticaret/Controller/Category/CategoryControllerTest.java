@@ -1,6 +1,7 @@
 package com.example.csticaret.Controller.Category;
 
-import com.example.csticaret.CategoryController;
+
+import com.example.csticaret.controller.CategoryController;
 import com.example.csticaret.exceptions.AlreadyExistsException;
 import com.example.csticaret.exceptions.ResourceNotFoundException;
 import com.example.csticaret.model.Category;

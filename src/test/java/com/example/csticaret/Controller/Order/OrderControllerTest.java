@@ -1,6 +1,6 @@
 package com.example.csticaret.Controller.Order;
 
-import com.example.csticaret.OrderController;
+import com.example.csticaret.controller.OrderController;
 import com.example.csticaret.enums.OrderStatus;
 import com.example.csticaret.model.Cart;
 import com.example.csticaret.model.Order;
