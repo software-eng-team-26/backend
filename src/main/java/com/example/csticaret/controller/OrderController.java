@@ -284,7 +284,7 @@ public class OrderController {
     }
 
     @PostMapping("/{orderId}/update-status")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Order>> updateOrderStatus(
             @PathVariable Long orderId,
             @RequestParam OrderStatus status) {
@@ -299,7 +299,7 @@ public class OrderController {
     }
 
     @GetMapping("/admin/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<Order>>> getAllOrders() {
         try {
             List<Order> orders = orderService.getAllOrders();

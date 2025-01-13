@@ -30,14 +30,13 @@ public class OrderItem {
     private Product product;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "refund_status", nullable = false)
-    private RefundStatus refundStatus = RefundStatus.NONE;
+    private RefundStatus refundStatus;
 
     public OrderItem(Order order, Product product, int quantity, BigDecimal price) {
         this.order = order;
         this.product = product;
         this.quantity = quantity;
         this.price = price;
-        this.refundStatus = RefundStatus.NONE;
+        this.refundStatus = RefundStatus.PENDING;
     }
 }

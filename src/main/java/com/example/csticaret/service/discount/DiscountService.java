@@ -5,6 +5,7 @@ import com.example.csticaret.model.Product;
 import com.example.csticaret.repository.DiscountRepository;
 import com.example.csticaret.repository.ProductRepository;
 import com.example.csticaret.exceptions.ResourceNotFoundException;
+import com.example.csticaret.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,9 +20,15 @@ import java.util.List;
 public class DiscountService {
     private final DiscountRepository discountRepository;
     private final ProductRepository productRepository;
+    private final NotificationService notificationService;
 
     @Transactional
-    public Discount createDiscount(Long productId, Double discountRate, LocalDateTime startDate, LocalDateTime endDate) {
+    public Discount createDiscount(Long productId, Double discountRate) {
+        // Validate discount rate
+        if (discountRate == null || discountRate < 0 || discountRate > 100) {
+            throw new IllegalArgumentException("Discount rate must be between 0 and 100");
+        }
+
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
@@ -32,8 +39,8 @@ public class DiscountService {
         Discount discount = new Discount();
         discount.setProduct(product);
         discount.setDiscountRate(discountRate);
-        discount.setStartDate(startDate);
-        discount.setEndDate(endDate);
+        discount.setStartDate(LocalDateTime.now());
+        discount.setEndDate(LocalDateTime.now().plusMonths(1));
         discount.setActive(true);
 
         // Update product price
@@ -50,7 +57,12 @@ public class DiscountService {
         product.setOriginalPrice(originalPrice);
         productRepository.save(product);
 
-        return discountRepository.save(discount);
+        Discount savedDiscount = discountRepository.save(discount);
+        
+        // Notify users about the discount
+        notificationService.notifyUsersAboutDiscount(product, discountRate);
+
+        return savedDiscount;
     }
 
     public List<Discount> getAllDiscounts() {

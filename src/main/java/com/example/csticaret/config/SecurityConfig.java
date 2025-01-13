@@ -73,7 +73,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/orders/create").authenticated()
                 .requestMatchers("/api/v1/orders/my-orders").authenticated()
                 .requestMatchers("/api/v1/orders/admin/**").permitAll()
-                .requestMatchers("/api/v1/orders/**").authenticated()
+                .requestMatchers("/api/v1/orders/**").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.POST,"/api/wishlist/add").permitAll()
                 .requestMatchers("/api/v1/carts/**").permitAll()
