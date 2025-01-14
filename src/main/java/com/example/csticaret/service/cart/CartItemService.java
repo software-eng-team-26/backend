@@ -26,24 +26,35 @@ public class CartItemService implements ICartItemService {
         Cart cart = cartService.getCart(cartId);
         Product product = productService.getProductById(productId);
         
-        CartItem cartItem = cart.getItems()
-                .stream()
-                .filter(item -> item.getProduct().getId().equals(productId))
-                .findFirst()
-                .orElse(new CartItem());
-
-        if (cartItem.getId() == null) {
-            cartItem.setCart(cart);
-            cartItem.setProduct(product);
-            cartItem.setQuantity(quantity);
-            cartItem.setUnitPrice(product.getPrice());
-        } else {
-            cartItem.setQuantity(cartItem.getQuantity() + quantity);
+        // Find existing item, with proper null checks
+        CartItem existingItem = null;
+        for (CartItem item : cart.getItems()) {
+            if (item != null && item.getProduct() != null && 
+                item.getProduct().getId().equals(productId)) {
+                existingItem = item;
+                break;
+            }
         }
-        
-        cartItem.calculateTotalPrice();
-        cart.addItem(cartItem);
-        cartItemRepository.save(cartItem);
+
+        if (existingItem != null) {
+            // Update existing item
+            existingItem.setQuantity(existingItem.getQuantity() + quantity);
+            existingItem.setUnitPrice(product.getPrice());
+            existingItem.calculateTotalPrice();
+            cartItemRepository.save(existingItem);
+        } else {
+            // Create new item
+            CartItem newItem = new CartItem();
+            newItem.setCart(cart);
+            newItem.setProduct(product);
+            newItem.setQuantity(quantity);
+            newItem.setUnitPrice(product.getPrice());
+            newItem.calculateTotalPrice();
+            cart.addItem(newItem);
+            cartItemRepository.save(newItem);
+        }
+
+        cart.updateTotalAmount();
         cartRepository.save(cart);
     }
 

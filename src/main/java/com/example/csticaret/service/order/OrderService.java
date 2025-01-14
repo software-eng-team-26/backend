@@ -1,14 +1,17 @@
 package com.example.csticaret.service.order;
 
 import com.example.csticaret.enums.OrderStatus;
+import com.example.csticaret.enums.RefundStatus;
 import com.example.csticaret.exceptions.ResourceNotFoundException;
 import com.example.csticaret.model.*;
+import com.example.csticaret.repository.OrderItemRepository;
 import com.example.csticaret.repository.OrderRepository;
 import com.example.csticaret.repository.ProductRepository;
 import com.example.csticaret.request.PaymentRequest;
 import com.example.csticaret.request.ShippingDetailsRequest;
 import com.example.csticaret.service.cart.ICartService;
 import com.example.csticaret.service.email.EmailService;
+import com.example.csticaret.service.notification.NotificationService;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
@@ -31,6 +34,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -41,6 +46,8 @@ public class OrderService implements IOrderService {
     private final ProductRepository productRepository;
     private final EmailService emailService;
     private static final String INVOICE_DIR = "invoices";
+    private final OrderItemRepository orderItemRepository;
+    private final NotificationService notificationService;
 
     @PostConstruct
     public void init() {
@@ -51,6 +58,7 @@ public class OrderService implements IOrderService {
             log.error("Failed to create invoice directory", e);
         }
     }
+
 
     @Override
     @Transactional
@@ -83,6 +91,60 @@ public class OrderService implements IOrderService {
         // Save again with items
         return orderRepository.save(savedOrder);
     }
+    @Transactional
+    public OrderItem requestRefund(Long orderId, Long itemId, Long userId) {
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        if (!order.getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Order not found for user");
+        }
+
+        OrderItem orderItem = orderItemRepository.findByOrder_IdAndId(orderId, itemId)
+            .orElseThrow(() -> new ResourceNotFoundException("Order item not found"));
+
+        orderItem.setRefundStatus(RefundStatus.REQUESTED);
+        return orderItemRepository.save(orderItem);
+    }
+    @Transactional
+    public OrderItem approveRefund(Long orderId, Long itemId, boolean approved) {
+        OrderItem orderItem = orderItemRepository.findByOrder_IdAndId(orderId, itemId)
+            .orElseThrow(() -> new ResourceNotFoundException("Order item not found"));
+
+        if (approved) {
+            orderItem.setRefundStatus(RefundStatus.APPROVED);
+            
+            // Update product stock
+            Product product = orderItem.getProduct();
+            product.setInventory(product.getInventory() + orderItem.getQuantity());
+            productRepository.save(product);
+            
+            // Send notification email
+            notificationService.notifyUserAboutRefund(orderItem);
+            
+            log.info("Refund approved and stock updated for order item: {}, product: {}, quantity: {}", 
+                itemId, product.getName(), orderItem.getQuantity());
+        } else {
+            orderItem.setRefundStatus(RefundStatus.REJECTED);
+        }
+
+        return orderItemRepository.save(orderItem);
+    }
+    private void processRefund(OrderItem orderItem) {
+        // Stok iadesi yapılabilir
+        Product product = orderItem.getProduct();
+        product.setInventory(product.getInventory() + orderItem.getQuantity());
+        productRepository.save(product);
+
+        // Kullanıcıya bilgilendirme e-postası gönderilebilir
+        String email = orderItem.getOrder().getUser().getEmail();
+        String message = "Your refund request for product " + product.getName() + " has been approved.";
+
+    }
+
+
+
+
 
     @Override
     public Order getOrderById(Long orderId) {
@@ -201,32 +263,7 @@ public class OrderService implements IOrderService {
         total.setAlignment(Element.ALIGN_RIGHT);
         document.add(total);
     }
-    @Transactional
-    public Order refundOrder(Long orderId, Long userId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
-        // Kullanıcı kontrolü
-        if (!order.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("You do not have permission to refund this order");
-        }
-
-        // Durum kontrolü
-        if (order.getOrderStatus() != OrderStatus.DELIVERED) {
-            throw new IllegalStateException("Only delivered orders can be refunded");
-        }
-
-        // Tarih kontrolü
-        LocalDateTime currentDate = LocalDateTime.now();
-        LocalDateTime deliveredDate = order.getOrderDate(); // Teslim tarihi sipariş tarihiyle aynıysa güncelleyebilirsiniz
-        if (deliveredDate.plusDays(30).isBefore(currentDate)) {
-            throw new IllegalStateException("Refund period has expired");
-        }
-
-        // İade işlemini gerçekleştir
-        order.setOrderStatus(OrderStatus.CANCELLED);
-        return orderRepository.save(order);
-    }
 
 
     public List<Order> getUserOrders(Long userId) {
@@ -242,26 +279,47 @@ public class OrderService implements IOrderService {
     }
 
     @Override
+    @Transactional
     public Order updateOrderStatus(Long id, OrderStatus status) {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        
+        // Only allow cancellation for PROCESSING or PROVISIONING orders
+        if (status == OrderStatus.CANCELLED && 
+            (order.getOrderStatus() != OrderStatus.PROCESSING && 
+             order.getOrderStatus() != OrderStatus.PROVISIONING)) {
+            throw new IllegalStateException("Can only cancel orders in PROCESSING or PROVISIONING state");
+        }
         
         order.setOrderStatus(status);
         
         // If order is cancelled, restore product inventory
         if (status == OrderStatus.CANCELLED) {
-            restoreInventory(order);
+            order.getItems().forEach(item -> {
+                Product product = item.getProduct();
+                product.setInventory(product.getInventory() + item.getQuantity());
+                productRepository.save(product);
+            });
         }
         
         return orderRepository.save(order);
     }
 
-    private void restoreInventory(Order order) {
-        order.getItems().forEach(item -> {
-            Product product = item.getProduct();
-            product.setInventory(product.getInventory() + item.getQuantity());
-            productRepository.save(product);
-        });
+    public List<OrderItem> getRefundRequests() {
+        return orderItemRepository.findByRefundStatusIn(
+            Arrays.asList(RefundStatus.REQUESTED, RefundStatus.PENDING)
+        ).stream()
+        .map(item -> {
+            // Ensure order and user are loaded
+            Order order = item.getOrder();
+            User user = order.getUser();
+            return item;
+        })
+        .collect(Collectors.toList());
+    }
+
+    public List<OrderItem> getOrderItems(Long orderId) {
+        return orderItemRepository.findByOrder_Id(orderId);
     }
 }
 

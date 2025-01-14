@@ -120,4 +120,44 @@ public class EmailService {
             order.getTotalAmount()
         );
     }
+
+    public void sendEmail(String toEmail, String subject, String htmlContent) {
+        try {
+            log.info("Starting to send email to: {}", toEmail);
+
+            // Create email request body
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("from", fromEmail);
+            requestBody.put("to", Collections.singletonList(toEmail));
+            requestBody.put("subject", subject);
+            requestBody.put("html", htmlContent);
+
+            // Set up headers
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(apiKey);
+
+            // Create request entity
+            HttpEntity<String> request = new HttpEntity<>(
+                objectMapper.writeValueAsString(requestBody), 
+                headers
+            );
+
+            // Send request
+            String response = restTemplate.postForObject(
+                "https://api.resend.com/emails",
+                request,
+                String.class
+            );
+
+            log.info("Email sent successfully. Response: {}", response);
+        } catch (HttpClientErrorException e) {
+            log.error("Resend API error. Status: {}, Response: {}", 
+                e.getStatusCode(), e.getResponseBodyAsString());
+            throw new RuntimeException("Failed to send email via Resend API", e);
+        } catch (Exception e) {
+            log.error("Error sending email", e);
+            throw new RuntimeException("Failed to send email", e);
+        }
+    }
 } 

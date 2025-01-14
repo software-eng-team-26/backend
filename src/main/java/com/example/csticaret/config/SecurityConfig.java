@@ -54,38 +54,42 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers("/api/v1/users/signin").permitAll()
-                .requestMatchers("/api/v1/users/add").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/comments/approved/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/v1/comments/add").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/v1/comments/rating").authenticated()
-                .requestMatchers("/api/v1/comments/admin/**").permitAll()
-                .requestMatchers("/api/v1/comments/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/orders/all").permitAll()
-                .requestMatchers(HttpMethod.PUT, "/api/v1/orders/*/status").permitAll()
-                .requestMatchers("/api/v1/orders/create").authenticated()
-                .requestMatchers("/api/v1/orders/my-orders").authenticated()
-                .requestMatchers("/api/v1/orders/admin/**").permitAll()
-                .requestMatchers("/api/v1/orders/**").authenticated()
-                .requestMatchers("/api/products/**").permitAll()
-                .requestMatchers(HttpMethod.POST,"/api/wishlist/add").permitAll()
-                .requestMatchers("/api/v1/carts/**").permitAll()
-                .requestMatchers("/api/v1/checkout/**").authenticated()
-                .requestMatchers("/api/v1/discounts/**").permitAll()
-                .anyRequest().permitAll()
-            )
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/users/signin").permitAll()
+                        .requestMatchers("/api/v1/users/add").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/comments/approved/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/comments/add").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/comments/rating").authenticated()
+                        .requestMatchers("/api/v1/comments/admin/**").permitAll()
+                        .requestMatchers("/api/v1/comments/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/orders/all").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/orders/*/status").permitAll()
+                        .requestMatchers("/api/v1/orders/create").authenticated()
+                        .requestMatchers("/api/v1/orders/my-orders").authenticated()
+                        .requestMatchers("/api/v1/orders/admin/**").permitAll()
+                        .requestMatchers("/api/v1/orders/**").permitAll()
+                        .requestMatchers("/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/wishlist/add").permitAll()
+                        .requestMatchers("/api/v1/carts/**").permitAll()
+                        .requestMatchers("/api/v1/checkout/**").authenticated()
+                        .requestMatchers("/api/v1/discounts/**").permitAll()
+
+
+
+
+                        .anyRequest().permitAll()
+                )
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -93,22 +97,22 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
+
         // Allow frontend origin
         configuration.addAllowedOrigin("http://localhost:5173");
-        
+
         // Allow all common methods
         configuration.addAllowedMethod("*");
-        
+
         // Allow specific headers
         configuration.addAllowedHeader("Authorization");
         configuration.addAllowedHeader("Content-Type");
         configuration.addAllowedHeader("Accept");
         configuration.addAllowedHeader("Origin");
-        
+
         // Don't need credentials since we're using token auth
         configuration.setAllowCredentials(false);
-        
+
         // Cache preflight for 1 hour
         configuration.setMaxAge(3600L);
 

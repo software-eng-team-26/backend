@@ -107,4 +107,15 @@ public class CommentController {
         CommentResponseDto approvedComment = commentService.approveComment(id);
         return ResponseEntity.ok(new ApiResponse<>("Comment approved successfully", approvedComment));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable Long id) {
+        try {
+            commentService.deleteComment(id);
+            return ResponseEntity.ok(new ApiResponse<>("Comment deleted successfully", null));
+        } catch (Exception e) {
+            log.error("Error deleting comment", e);
+            return ResponseEntity.badRequest().body(new ApiResponse<>(e.getMessage(), null));
+        }
+    }
 }

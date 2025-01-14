@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Data
@@ -16,7 +17,8 @@ public class Comment {
     @Column(nullable = true)
     private String content;
 
-    @Column(nullable = true)
+    @NotNull
+    @Column(nullable = false)
     private Integer rating;
 
     private boolean approved;

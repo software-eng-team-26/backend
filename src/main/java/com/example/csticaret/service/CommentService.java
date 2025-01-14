@@ -211,10 +211,10 @@ public class CommentService {
         return dto;
 }
 
-    public void deleteComment(Long commentId) {
-        Comment comment = commentRepository.findById(commentId)
-            .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
-            
+    public void deleteComment(Long id) {
+        Comment comment = commentRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Comment not found with id: " + id));
+        
         // If this is a rating with a review, update the product's average rating
         if (comment.getRating() != null) {
             Product product = comment.getProduct();

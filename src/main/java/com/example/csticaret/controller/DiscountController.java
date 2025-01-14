@@ -4,6 +4,7 @@ import com.example.csticaret.model.Discount;
 import com.example.csticaret.request.DiscountRequest;
 import com.example.csticaret.service.discount.DiscountService;
 import com.example.csticaret.response.ApiResponse;
+import com.example.csticaret.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,14 +25,18 @@ public class DiscountController {
         try {
             Discount discount = discountService.createDiscount(
                 request.getProductId(),
-                request.getDiscountRate(),
-                request.getStartDate(),
-                request.getEndDate()
+                request.getDiscountRate()
             );
             return ResponseEntity.ok(new ApiResponse<>("Discount created successfully", discount));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(e.getMessage(), null));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(e.getMessage(), null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<>("Failed to create discount", null));
+                .body(new ApiResponse<>("Failed to create discount: " + e.getMessage(), null));
         }
     }
 

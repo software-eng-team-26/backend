@@ -52,4 +52,9 @@ public class User {
         inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id")
     )
     private Collection<Role> roles = new HashSet<>();
+
+    public boolean hasRole(String roleName) {
+        return roles.stream()
+            .anyMatch(role -> role.getName().equals(roleName));
+    }
 }
