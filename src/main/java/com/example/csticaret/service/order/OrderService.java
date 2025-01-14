@@ -11,6 +11,7 @@ import com.example.csticaret.request.PaymentRequest;
 import com.example.csticaret.request.ShippingDetailsRequest;
 import com.example.csticaret.service.cart.ICartService;
 import com.example.csticaret.service.email.EmailService;
+import com.example.csticaret.service.notification.NotificationService;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
@@ -33,6 +34,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -44,6 +47,7 @@ public class OrderService implements IOrderService {
     private final EmailService emailService;
     private static final String INVOICE_DIR = "invoices";
     private final OrderItemRepository orderItemRepository;
+    private final NotificationService notificationService;
 
     @PostConstruct
     public void init() {
@@ -89,47 +93,39 @@ public class OrderService implements IOrderService {
     }
     @Transactional
     public OrderItem requestRefund(Long orderId, Long itemId, Long userId) {
-        // Siparişi bul
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+            .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
-        // Siparişin kullanıcıya ait olduğunu kontrol et
         if (!order.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("You do not have permission to request a refund for this order");
+            throw new ResourceNotFoundException("Order not found for user");
         }
 
-        // İlgili sipariş kalemini bul
-        OrderItem orderItem = order.getItems().stream()
-                .filter(item -> item.getId().equals(itemId))
-                .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("Order item not found with id: " + itemId));
+        OrderItem orderItem = orderItemRepository.findByOrder_IdAndId(orderId, itemId)
+            .orElseThrow(() -> new ResourceNotFoundException("Order item not found"));
 
-        // İade durumu kontrolü
-        if (orderItem.getRefundStatus() != RefundStatus.NONE) {
-            throw new IllegalStateException("Refund has already been requested for this item");
-        }
-
-        // Refund talebini işaretle
         orderItem.setRefundStatus(RefundStatus.REQUESTED);
         return orderItemRepository.save(orderItem);
     }
     @Transactional
     public OrderItem approveRefund(Long orderId, Long itemId, boolean approved) {
-        // OrderItem'ı bul
-        OrderItem orderItem = orderItemRepository.findByOrderIdAndId(orderId, itemId)
-                .orElseThrow(() -> new IllegalArgumentException("Order item not found"));
+        OrderItem orderItem = orderItemRepository.findByOrder_IdAndId(orderId, itemId)
+            .orElseThrow(() -> new ResourceNotFoundException("Order item not found"));
 
-        // Refund durumunu kontrol et
-        if (orderItem.getRefundStatus() != RefundStatus.REQUESTED) {
-            throw new IllegalStateException("Refund is not in a requested state");
-        }
-
-        // Refund durumunu güncelle
-        orderItem.setRefundStatus(approved ? RefundStatus.APPROVED : RefundStatus.REJECTED);
-
-        // İlgili işlemleri yap (örneğin, geri ödeme sürecini başlat)
         if (approved) {
-            processRefund(orderItem);
+            orderItem.setRefundStatus(RefundStatus.APPROVED);
+            
+            // Update product stock
+            Product product = orderItem.getProduct();
+            product.setInventory(product.getInventory() + orderItem.getQuantity());
+            productRepository.save(product);
+            
+            // Send notification email
+            notificationService.notifyUserAboutRefund(orderItem);
+            
+            log.info("Refund approved and stock updated for order item: {}, product: {}, quantity: {}", 
+                itemId, product.getName(), orderItem.getQuantity());
+        } else {
+            orderItem.setRefundStatus(RefundStatus.REJECTED);
         }
 
         return orderItemRepository.save(orderItem);
@@ -283,26 +279,47 @@ public class OrderService implements IOrderService {
     }
 
     @Override
+    @Transactional
     public Order updateOrderStatus(Long id, OrderStatus status) {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        
+        // Only allow cancellation for PROCESSING or PROVISIONING orders
+        if (status == OrderStatus.CANCELLED && 
+            (order.getOrderStatus() != OrderStatus.PROCESSING && 
+             order.getOrderStatus() != OrderStatus.PROVISIONING)) {
+            throw new IllegalStateException("Can only cancel orders in PROCESSING or PROVISIONING state");
+        }
         
         order.setOrderStatus(status);
         
         // If order is cancelled, restore product inventory
         if (status == OrderStatus.CANCELLED) {
-            restoreInventory(order);
+            order.getItems().forEach(item -> {
+                Product product = item.getProduct();
+                product.setInventory(product.getInventory() + item.getQuantity());
+                productRepository.save(product);
+            });
         }
         
         return orderRepository.save(order);
     }
 
-    private void restoreInventory(Order order) {
-        order.getItems().forEach(item -> {
-            Product product = item.getProduct();
-            product.setInventory(product.getInventory() + item.getQuantity());
-            productRepository.save(product);
-        });
+    public List<OrderItem> getRefundRequests() {
+        return orderItemRepository.findByRefundStatusIn(
+            Arrays.asList(RefundStatus.REQUESTED, RefundStatus.PENDING)
+        ).stream()
+        .map(item -> {
+            // Ensure order and user are loaded
+            Order order = item.getOrder();
+            User user = order.getUser();
+            return item;
+        })
+        .collect(Collectors.toList());
+    }
+
+    public List<OrderItem> getOrderItems(Long orderId) {
+        return orderItemRepository.findByOrder_Id(orderId);
     }
 }
 

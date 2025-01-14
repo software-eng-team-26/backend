@@ -27,4 +27,6 @@ public interface IOrderService {
     OrderItem requestRefund(Long orderId, Long itemId, Long id);
 
     OrderItem approveRefund(Long orderId, Long itemId, boolean approved);
+
+    List<OrderItem> getRefundRequests();
 }

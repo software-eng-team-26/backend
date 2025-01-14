@@ -6,6 +6,8 @@ import com.example.csticaret.exceptions.ResourceNotFoundException;
 import com.example.csticaret.model.Product;
 import com.example.csticaret.request.AddProductRequest;
 import com.example.csticaret.request.ProductUpdateRequest;
+import com.example.csticaret.request.StockUpdateRequest;
+import com.example.csticaret.request.PriceUpdateRequest;
 import com.example.csticaret.response.ApiResponse;
 import com.example.csticaret.service.product.IProductService;
 import lombok.RequiredArgsConstructor;
@@ -172,5 +174,17 @@ public class ProductController {
         }
     }
 
+    @PutMapping("/product/{id}/stock")
+    public ResponseEntity<Product> updateProductStock(
+            @PathVariable Long id,
+            @RequestBody StockUpdateRequest request) {
+        return ResponseEntity.ok(productService.updateProductStock(id, request));
+    }
 
+    @PutMapping("/product/{id}/price")
+    public ResponseEntity<Product> updateProductPrice(
+            @PathVariable Long id,
+            @RequestBody PriceUpdateRequest request) {
+        return ResponseEntity.ok(productService.updateProductPrice(id, request));
+    }
 }

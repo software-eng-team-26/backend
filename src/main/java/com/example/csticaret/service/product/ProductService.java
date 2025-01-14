@@ -11,6 +11,8 @@ import com.example.csticaret.repository.ImageRepository;
 import com.example.csticaret.repository.ProductRepository;
 import com.example.csticaret.request.AddProductRequest;
 import com.example.csticaret.request.ProductUpdateRequest;
+import com.example.csticaret.request.StockUpdateRequest;
+import com.example.csticaret.request.PriceUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -92,27 +94,11 @@ public class ProductService implements IProductService {
     }
 
     private Product updateExistingProduct(Product existingProduct, ProductUpdateRequest request) {
-        existingProduct.setName(request.getName());
-        existingProduct.setBrand(request.getBrand());
-        existingProduct.setPrice(request.getPrice());
-        existingProduct.setInventory(request.getInventory());
-        existingProduct.setDescription(request.getDescription());
-        existingProduct.setLevel(request.getLevel());
-        existingProduct.setDuration(request.getDuration());
-        existingProduct.setModuleCount(request.getModuleCount());
-       // existingProduct.isCertification(request.getC());
-        existingProduct.setInstructorName(request.getInstructorName());
-        existingProduct.setInstructorRole(request.getInstructorRole());
-        existingProduct.setThumbnailUrl(request.getThumbnailUrl());
-        existingProduct.setCurriculum(request.getCurriculum());
-
-
-
-
-        Category category = categoryRepository.findByName(request.getCategory().getName());
-        existingProduct.setCategory(category);
-        return  existingProduct;
-
+        // Only update inventory, preserve all other fields
+        if (request.getInventory() > 0) {
+            existingProduct.setInventory(request.getInventory());
+        }
+        return existingProduct;
     }
 
     @Override
@@ -199,5 +185,25 @@ public class ProductService implements IProductService {
     public List<Product> getProductsByInstructorName(String instructorName) {
         return productRepository.findByInstructorName(instructorName);
 
+    }
+
+    @Override
+    public Product updateProductStock(Long productId, StockUpdateRequest request) {
+        return productRepository.findById(productId)
+                .map(existingProduct -> {
+                    existingProduct.setInventory(request.getInventory());
+                    return productRepository.save(existingProduct);
+                })
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found!"));
+    }
+
+    @Override
+    public Product updateProductPrice(Long productId, PriceUpdateRequest request) {
+        return productRepository.findById(productId)
+                .map(existingProduct -> {
+                    existingProduct.setPrice(request.getPrice());
+                    return productRepository.save(existingProduct);
+                })
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found!"));
     }
 }

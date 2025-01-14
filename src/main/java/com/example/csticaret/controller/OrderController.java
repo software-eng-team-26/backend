@@ -254,6 +254,13 @@ public class OrderController {
             
             User user = userService.getUserByEmail(userDetails.getUsername());
             List<Order> orders = orderService.getUserOrders(user.getId());
+            
+            // Add debug logging
+            log.info("Returning orders for user {}: {}", user.getId(), orders);
+            orders.forEach(order -> 
+                log.info("Order {}: status = {}", order.getId(), order.getOrderStatus())
+            );
+            
             return ResponseEntity.ok(new ApiResponse<>("Orders retrieved successfully", orders));
         } catch (Exception e) {
             log.error("Error fetching user orders:", e);
@@ -284,13 +291,17 @@ public class OrderController {
     }
 
     @PostMapping("/{orderId}/update-status")
-    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Order>> updateOrderStatus(
             @PathVariable Long orderId,
             @RequestParam OrderStatus status) {
         try {
+            log.info("Updating order {} status to {}", orderId, status);
             Order order = orderService.updateOrderStatus(orderId, status);
             return ResponseEntity.ok(new ApiResponse<>("Order status updated successfully", order));
+        } catch (IllegalStateException e) {
+            log.warn("Invalid order status update attempt: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(e.getMessage(), null));
         } catch (Exception e) {
             log.error("Error updating order status:", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -308,6 +319,18 @@ public class OrderController {
             log.error("Error fetching all orders:", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>("Failed to fetch orders", null));
+        }
+    }
+
+    @GetMapping("/refund-requests")
+    public ResponseEntity<ApiResponse<List<OrderItem>>> getRefundRequests() {
+        try {
+            List<OrderItem> refundRequests = orderService.getRefundRequests();
+            return ResponseEntity.ok(new ApiResponse<>("Refund requests retrieved successfully", refundRequests));
+        } catch (Exception e) {
+            log.error("Error fetching refund requests:", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>("Failed to fetch refund requests", null));
         }
     }
 }

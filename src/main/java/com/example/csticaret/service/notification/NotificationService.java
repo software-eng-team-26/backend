@@ -2,6 +2,7 @@ package com.example.csticaret.service.notification;
 
 import com.example.csticaret.model.Product;
 import com.example.csticaret.model.Wishlist;
+import com.example.csticaret.model.OrderItem;
 import com.example.csticaret.repository.WishlistRepository;
 import com.example.csticaret.repository.ProductRepository;
 import com.example.csticaret.service.email.EmailService;
@@ -90,6 +91,56 @@ public class NotificationService {
             }
         } catch (Exception e) {
             log.error("Error in notifyUsersAboutDiscount", e);
+            throw e;
+        }
+    }
+
+    public void notifyUserAboutRefund(OrderItem orderItem) {
+        try {
+            String subject = "Refund Request Approved for Order #" + orderItem.getOrder().getId();
+            String emailContent = String.format("""
+                <html>
+                <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #2c3e50;">Refund Request Approved</h2>
+                    <p>Your refund request has been approved for the following item:</p>
+                    <div style="margin: 20px 0; padding: 20px; border: 1px solid #e1e1e1; border-radius: 5px;">
+                        <h3 style="color: #2c3e50; margin-bottom: 15px;">%s</h3>
+                        <p style="font-size: 16px;">Order #%d</p>
+                        <p style="font-size: 18px; color: #27ae60; font-weight: bold;">Refund Amount: $%.2f</p>
+                    </div>
+                    <p style="color: #e67e22;">Please return the product to process your refund.</p>
+                    <p>Return Address:</p>
+                    <p style="background-color: #f8f9fa; padding: 10px; border-radius: 5px;">
+                        EduMart Returns Department<br>
+                        123 Education Street<br>
+                        Learning City, ED 12345
+                    </p>
+                    <p style="color: #7f8c8d; font-size: 14px;">
+                        Once we receive the returned product, we will process your refund within 3-5 business days.
+                    </p>
+                    <br>
+                    <p>Best regards,</p>
+                    <p style="font-weight: bold;">EduMart Team</p>
+                </body>
+                </html>
+                """,
+                orderItem.getProduct().getName(),
+                orderItem.getOrder().getId(),
+                orderItem.getPrice().doubleValue()
+            );
+
+            emailService.sendEmail(
+                orderItem.getOrder().getUser().getEmail(),
+                subject,
+                emailContent
+            );
+            
+            log.info("Refund approval notification sent to user: {} for product: {}", 
+                orderItem.getOrder().getUser().getEmail(), 
+                orderItem.getProduct().getName());
+            
+        } catch (Exception e) {
+            log.error("Failed to send refund approval notification", e);
             throw e;
         }
     }

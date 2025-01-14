@@ -3,7 +3,8 @@ import com.example.csticaret.dto.ProductDto;
 import com.example.csticaret.model.Product;
 import com.example.csticaret.request.AddProductRequest;
 import com.example.csticaret.request.ProductUpdateRequest;
-
+import com.example.csticaret.request.StockUpdateRequest;
+import com.example.csticaret.request.PriceUpdateRequest;
 
 import java.util.List;
 
@@ -25,4 +26,7 @@ public interface IProductService {
     ProductDto convertToDto(Product product);
 
     List<Product> getProductsByInstructorName(String instructorName);
+
+    Product updateProductStock(Long productId, StockUpdateRequest request);
+    Product updateProductPrice(Long productId, PriceUpdateRequest request);
 }
