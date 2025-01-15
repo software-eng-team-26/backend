@@ -1,5 +1,5 @@
 resend:
   api:
-    key: re_TLYtYGfU_HDjJtTNuATNt32i1cfwmX4At
+    key: "put the api key"
   from:
     email: invoice.edumart@studylabai.com
